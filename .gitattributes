@@ -1,0 +1,14 @@
+* text=auto eol=lf
+
+# Ensure HTML/CSS/JS are treated as text with LF line endings
+*.html text eol=lf
+*.css  text eol=lf
+*.js   text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+
+# Linguist hints
+*.min.js linguist-generated=true
+*.min.css linguist-generated=true
