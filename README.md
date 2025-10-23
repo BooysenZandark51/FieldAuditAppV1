@@ -39,6 +39,4 @@ Example final node in n8n: **HTTP Response**
 - Status: `200`
 - Body: `OK` (not used; only status is checked)
 
-## Default login
-- Username: `Gerhard.B`
-- Password: `Gt55115511`
+
