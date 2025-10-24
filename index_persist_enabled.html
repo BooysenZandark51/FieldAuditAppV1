@@ -317,16 +317,58 @@ SOFTWARE.
       </form>
     </dialog>
 
-    <script>
+    <script type="module" src="user-store.js"></script>
+<script type="module" src="capture-store.js"></script>
+<script>
       (function(){
         'use strict';
-        const LS=(()=>{ let mem={}; let ok=true; try{ const t='__ls_test__'; localStorage.setItem(t,'1'); localStorage.removeItem(t); }catch(e){ ok=false; }
-          return {
-            get:(k)=>{ try{ if(ok){ const v=localStorage.getItem(k); return v?JSON.parse(v):null } else { return k in mem ? mem[k] : null } }catch(e){ return null } },
-            set:(k,v)=>{ try{ if(ok){ localStorage.setItem(k,JSON.stringify(v)) } else { mem[k]=v } }catch(e){ } },
-            del:(k)=>{ try{ if(ok){ localStorage.removeItem(k) } else { delete mem[k] } }catch(e){ } }
-          }
-        })();
+        const LS = (function(){
+  // Compatibility shim that routes important keys to the new stores.
+  // Falls back to localStorage for anything unknown.
+  const raw = {
+    get(k){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):null }catch(e){ return null } },
+    set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)) }catch(e){} },
+    del(k){ try{ localStorage.removeItem(k) }catch(e){} },
+  };
+  function isOutbox(k){ return /(^guest:outbox$)|(^outbox@)/.test(k) }
+  function isDraft(k){ return /(^guest:draft$)|(^draft@)/.test(k) }
+  function isGPS(k){ return /(^guest:lastGPS$)|(^lastGPS@)/.test(k) }
+  function isSentLog(k){ return /(^guest:sentLog$)|(^sentLog@)/.test(k) }
+
+  return {
+    get(k){
+      if (k==='settings') return (window.UserStore?UserStore.getSettings():raw.get(k));
+      if (k==='currentUser') return (window.UserStore?UserStore.getCurrentUser():raw.get(k));
+      if (isOutbox(k)) return (window.CaptureStore?CaptureStore.getOutbox():raw.get(k));
+      if (isDraft(k)) return (window.CaptureStore?CaptureStore.loadDraft():raw.get(k));
+      if (isGPS(k)) return (window.CaptureStore?CaptureStore.getGPS():raw.get(k));
+      // For sentLog we keep using raw store to avoid changing app expectations
+      if (isSentLog(k)) return raw.get(k) || {};
+      return raw.get(k);
+    },
+    set(k,v){
+      if (k==='settings') return (window.UserStore?UserStore.saveSettings(v):raw.set(k,v));
+      if (k==='currentUser') return raw.set(k,v); // currentUser is managed by UserStore.login/logout; keep raw for compatibility
+      if (isOutbox(k)) return (window.CaptureStore? (function(){ /* rewrite whole outbox */ 
+          // Clear then requeue to mirror previous behaviour
+          localStorage.setItem(k, JSON.stringify(v)); 
+        })() : raw.set(k,v));
+      if (isDraft(k)) return (window.CaptureStore?CaptureStore.saveDraft(v):raw.set(k,v));
+      if (isGPS(k)) return (window.CaptureStore?CaptureStore.setGPS(v):raw.set(k,v));
+      if (isSentLog(k)) return raw.set(k,v);
+      return raw.set(k,v);
+    },
+    del(k){
+      if (k==='settings'){ localStorage.removeItem(k); return }
+      if (k==='currentUser'){ localStorage.removeItem(k); return }
+      if (isOutbox(k)){ return (window.CaptureStore?CaptureStore.clearOutbox():raw.del(k)) }
+      if (isDraft(k)){ return (window.CaptureStore?CaptureStore.clearDraft():raw.del(k)) }
+      if (isGPS(k)){ return raw.del(k) }
+      if (isSentLog(k)){ return raw.del(k) }
+      return raw.del(k);
+    }
+  };
+})();
         const tz='Africa/Johannesburg';
         const defaultElecTypes=['Actaris','Ampy','CBI','Econ','Enligt','Hexing','Ihemeter 3PH WC','Kamstrup 1PH','Kamstrup 3PH','L+G Cashpower','L+G E460','TSK/3','VC1800','VC3000','VC3100','Unknown'];
         const defaultWaterTypes=['Lesira','Kent','Sensus','Elster'];
