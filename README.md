@@ -6,11 +6,11 @@ A lightweight, offline-friendly field audit web app that queues submissions loca
 - Offline queue (Outbox) with background retry
 - Required fields: Stand Nr, Area, Street Address, Minisub / Bulk, Supply Cable, Breaker State
 - Optional fields (Electrical, Water, Stand note)
-- Admin-only Settings (username `Gerhard.B`, password `Gt55115511`)
+- Admin-only Settings 
 - Configurable webhooks:
-  - Capture Webhook (POST): receives JSON payloads of audit records
-  - Auth Webhook (GET): queried with `?username=...&password=...`, must return HTTP 200 on success
-  - Create-User Webhook (POST): receives `{ "username": "...", "password": "..." }`
+  - Capture Webhook (POST)
+  - Auth Webhook (GET)
+  - Create-User Webhook (POST)
 
 ## Configure
 Open Settings (⚙️) as the admin and set:
