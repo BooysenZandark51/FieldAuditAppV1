@@ -315,28 +315,12 @@
   (function fieldCaptureBootstrap(){
     'use strict';
     const tz='Africa/Johannesburg';
-    const STARTUP_WEBHOOK = 'https://n8n.srv1079977.hstgr.cloud/webhook-test/StarupAndRetrieve';
+    const STARTUP_WEBHOOK = 'https://n8n.srv1079977.hstgr.cloud/webhook/StarupAndRetrieve';
     async function ensureAuthWebhookFromStartup(){
   const s = ensureSettings();
-  let current = (s.authWebhook || '').trim();
-
+  if ((s.authWebhook||'').trim()) return s.authWebhook.trim();
   try {
     const res = await fetch(STARTUP_WEBHOOK, { method:'GET', mode:'cors', credentials:'omit' });
-    if (res.ok) {
-      let data = null;
-      try { data = await res.json(); } catch(_) {}
-      const discovered = (data && (data.authWebhook || (data.settings && data.settings.authWebhook))) || '';
-      if (discovered && discovered.trim() && discovered.trim() !== current) {
-        current = discovered.trim();
-        s.authWebhook = current;
-        LS.set('settings', s);
-      }
-    }
-  } catch(_) {
-    // network error: keep whatever we have in settings
-  }
-  return current;
-});
     if (!res.ok) return '';
     let data = null;
     try { data = await res.json(); } catch(_) {}
@@ -447,11 +431,18 @@
       setAuthUI();
     });
   })();
+
+document.addEventListener('DOMContentLoaded', () => {
+  const f = document.getElementById('loginForm');
+  if (f) {
+    f.addEventListener('submit', (e) => {
+      e.preventDefault();
+      performLogin(e);
+    });
+  }
+});
 </script>
 
   </body>
 </html>
-
-
-  </body>
 </html>
