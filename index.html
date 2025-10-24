@@ -315,6 +315,25 @@
   (function fieldCaptureBootstrap(){
     'use strict';
     const tz='Africa/Johannesburg';
+    const STARTUP_WEBHOOK = 'https://n8n.srv1079977.hstgr.cloud/webhook/StarupAndRetrieve';
+    async function ensureAuthWebhookFromStartup(){
+  const s = ensureSettings();
+  if ((s.authWebhook||'').trim()) return s.authWebhook.trim();
+  try {
+    const res = await fetch(STARTUP_WEBHOOK, { method:'GET', mode:'cors', credentials:'omit' });
+    if (!res.ok) return '';
+    let data = null;
+    try { data = await res.json(); } catch(_) {}
+    const auth = (data && (data.authWebhook || (data.settings && data.settings.authWebhook))) || '';
+    if (auth) {
+      s.authWebhook = auth;
+      LS.set('settings', s);
+      return auth;
+    }
+  } catch(_) {}
+  return '';
+}
+
     const LS=(()=>{ let mem={}; let ok=true; try{ const t='_ls_'; localStorage.setItem(t,'1'); localStorage.removeItem(t); }catch(e){ ok=false } return { get(k){ try{ if(ok){ const v=localStorage.getItem(k); return v?JSON.parse(v):null } return k in mem?mem[k]:null }catch(e){ return null } }, set(k,v){ try{ if(ok){ localStorage.setItem(k,JSON.stringify(v)) } else { mem[k]=v } }catch(e){} }, del(k){ try{ if(ok){ localStorage.removeItem(k) } else { delete mem[k] } }catch(e){} } } })();
     function userKey(k){ const u=LS.get('currentUser'); return (u&&u.u)?k+'@'+u.u:'guest:'+k }
     function fmt(n){return(n||0).toLocaleString('en-ZA')}
@@ -352,7 +371,46 @@
     function getAuthWebhook(){ const s=LS.get('settings')||{}; return (s.authWebhook||'').trim() }
     function getCreateUserWebhook(){ const s=LS.get('settings')||{}; return (s.createUserWebhook||'').trim() }
     async function authViaGet(username,password){ const url=getAuthWebhook(); if(!url) return {ok:false,reason:'no-auth-url'}; const qs=new URLSearchParams({username,password}).toString(); const full=url+(url.includes('?')?'&':'?')+qs; try{ const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),10000); const res=await fetch(full,{method:'GET',mode:'cors',credentials:'omit',signal:controller.signal}); clearTimeout(timer); let data=null; if(res.headers.get('content-type')?.includes('application/json')){ try{ data=await res.json() }catch(_){} } return {ok:res.ok,status:res.status,data} }catch(e){ return {ok:false,error:String(e)} } }
-    async function performLogin(e){ e?.preventDefault?.(); const u=(document.getElementById('loginUser')?.value||'').trim(); const p=(document.getElementById('loginPass')?.value||'').trim(); const btn=document.querySelector('#loginForm button[type="submit"]'); if(!u||!p){ alert('Enter username and password'); return } if(btn){ btn.disabled=true; btn.textContent='Signing in…' } if(u==='Gerhard.B'&&p==='Gt55115511'){ LS.set('currentUser',{u,ts:new Date().toISOString(),tz:tz}); if(btn){ btn.disabled=false; btn.textContent='Sign in' } setAuthUI(); alert('login Success'); return } const r=await authViaGet(u,p); if(btn){ btn.disabled=false; btn.textContent='Sign in' } if(r.ok){ if(r.data&&r.data.settings){ const cur=ensureSettings(); const merged={...cur,...r.data.settings}; LS.set('settings',merged) } LS.set('currentUser',{u,ts:new Date().toISOString(),tz:tz}); setAuthUI(); alert('login Success') } else { alert('Login failed') } }
+    async function performLogin(e){
+  e?.preventDefault?.();
+  const u = (document.getElementById('loginUser')?.value || '').trim();
+  const p = (document.getElementById('loginPass')?.value || '').trim();
+  const btn = document.querySelector('#loginForm button[type="submit"]');
+  if (!u || !p){ alert('Enter username and password'); return }
+
+  if (btn){ btn.disabled = true; btn.textContent = 'Signing in…' }
+
+  if (u === 'Gerhard.B' && p === 'Gt55115511'){
+    LS.set('currentUser', { u, ts:new Date().toISOString(), tz: 'Africa/Johannesburg' });
+    if (btn){ btn.disabled=false; btn.textContent='Sign in' }
+    setAuthUI();
+    alert('login Success');
+    return;
+  }
+
+  const authUrl = await ensureAuthWebhookFromStartup();
+  if (!authUrl){
+    if (btn){ btn.disabled=false; btn.textContent='Sign in' }
+    alert('Startup failed: no auth webhook available');
+    return;
+  }
+
+  const r = await authViaGet(u, p);  // uses getAuthWebhook() which now has a value
+  if (btn){ btn.disabled=false; btn.textContent='Sign in' }
+
+  if (r.ok){
+    if (r.data && r.data.settings){
+      const cur = ensureSettings();
+      LS.set('settings', { ...cur, ...r.data.settings });
+    }
+    LS.set('currentUser', { u, ts:new Date().toISOString(), tz: 'Africa/Johannesburg' });
+    setAuthUI();
+    alert('login Success');
+  } else {
+    alert('Login failed');
+  }
+}
+
     function logout(){ LS.del('currentUser'); try{ const form=document.getElementById('captureForm'); form?.reset(); ['area','elecType','supplyCable','breakerState','waterType'].forEach(id=>{ const el=document.getElementById(id); if(el)el.value='' }) }catch(e){} setAuthUI() }
 
     document.addEventListener('DOMContentLoaded',()=>{
