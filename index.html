@@ -318,20 +318,25 @@
       const STARTUP_WEBHOOK = 'https://n8n.srv1079977.hstgr.cloud/webhook-test/Starup';
     async function ensureAuthWebhookFromStartup(){
   const s = ensureSettings();
-  if ((s.authWebhook||'').trim()) return s.authWebhook.trim();
+  let current = (s.authWebhook || '').trim();
+
   try {
     const res = await fetch(STARTUP_WEBHOOK, { method:'GET', mode:'cors', credentials:'omit' });
-    if (!res.ok) return '';
-    let data = null;
-    try { data = await res.json(); } catch(_) {}
-    const auth = (data && (data.authWebhook || (data.settings && data.settings.authWebhook))) || '';
-    if (auth) {
-      s.authWebhook = auth;
-      LS.set('settings', s);
-      return auth;
+    if (res.ok) {
+      let data = null;
+      try { data = await res.json(); } catch(_) {}
+      const discovered = (data && (data.authWebhook || (data.settings && data.settings.authWebhook))) || '';
+      if (discovered && discovered !== current) {
+        s.authWebhook = discovered.trim();
+        LS.set('settings', s);
+        current = s.authWebhook;
+      }
     }
-  } catch(_) {}
-  return '';
+  } catch(_) {
+    // ignore network errors; fall back to whatever we had
+  }
+
+  return current; // may be updated or the previous value
 }
 
     const LS=(()=>{ let mem={}; let ok=true; try{ const t='_ls_'; localStorage.setItem(t,'1'); localStorage.removeItem(t); }catch(e){ ok=false } return { get(k){ try{ if(ok){ const v=localStorage.getItem(k); return v?JSON.parse(v):null } return k in mem?mem[k]:null }catch(e){ return null } }, set(k,v){ try{ if(ok){ localStorage.setItem(k,JSON.stringify(v)) } else { mem[k]=v } }catch(e){} }, del(k){ try{ if(ok){ localStorage.removeItem(k) } else { delete mem[k] } }catch(e){} } } })();
