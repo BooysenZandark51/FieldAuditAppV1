@@ -33,10 +33,6 @@ See `record` payload in the app source (index.html).
 { "username": "foo", "password": "bar" }
 ```
 
-## Admin access
-- Username: `Gerhard.B`
-- Password: `Gt55115511`
-
 ## Run locally
 Open `index.html` in a browser, or use a simple static server:
 ```bash
