@@ -315,7 +315,7 @@
   (function fieldCaptureBootstrap(){
     'use strict';
     const tz='Africa/Johannesburg';
-      const STARTUP_WEBHOOK = 'https://n8n.srv1079977.hstgr.cloud/webhook-test/Starup';
+    const STARTUP_WEBHOOK = 'https://n8n.srv1079977.hstgr.cloud/webhook-test/StarupAndRetrieve';
     async function ensureAuthWebhookFromStartup(){
   const s = ensureSettings();
   let current = (s.authWebhook || '').trim();
@@ -326,17 +326,28 @@
       let data = null;
       try { data = await res.json(); } catch(_) {}
       const discovered = (data && (data.authWebhook || (data.settings && data.settings.authWebhook))) || '';
-      if (discovered && discovered !== current) {
-        s.authWebhook = discovered.trim();
+      if (discovered && discovered.trim() && discovered.trim() !== current) {
+        current = discovered.trim();
+        s.authWebhook = current;
         LS.set('settings', s);
-        current = s.authWebhook;
       }
     }
   } catch(_) {
-    // ignore network errors; fall back to whatever we had
+    // network error: keep whatever we have in settings
   }
-
-  return current; // may be updated or the previous value
+  return current;
+});
+    if (!res.ok) return '';
+    let data = null;
+    try { data = await res.json(); } catch(_) {}
+    const auth = (data && (data.authWebhook || (data.settings && data.settings.authWebhook))) || '';
+    if (auth) {
+      s.authWebhook = auth;
+      LS.set('settings', s);
+      return auth;
+    }
+  } catch(_) {}
+  return '';
 }
 
     const LS=(()=>{ let mem={}; let ok=true; try{ const t='_ls_'; localStorage.setItem(t,'1'); localStorage.removeItem(t); }catch(e){ ok=false } return { get(k){ try{ if(ok){ const v=localStorage.getItem(k); return v?JSON.parse(v):null } return k in mem?mem[k]:null }catch(e){ return null } }, set(k,v){ try{ if(ok){ localStorage.setItem(k,JSON.stringify(v)) } else { mem[k]=v } }catch(e){} }, del(k){ try{ if(ok){ localStorage.removeItem(k) } else { delete mem[k] } }catch(e){} } } })();
@@ -376,55 +387,7 @@
     function getAuthWebhook(){ const s=LS.get('settings')||{}; return (s.authWebhook||'').trim() }
     function getCreateUserWebhook(){ const s=LS.get('settings')||{}; return (s.createUserWebhook||'').trim() }
     async function authViaGet(username,password){ const url=getAuthWebhook(); if(!url) return {ok:false,reason:'no-auth-url'}; const qs=new URLSearchParams({username,password}).toString(); const full=url+(url.includes('?')?'&':'?')+qs; try{ const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),10000); const res=await fetch(full,{method:'GET',mode:'cors',credentials:'omit',signal:controller.signal}); clearTimeout(timer); let data=null; if(res.headers.get('content-type')?.includes('application/json')){ try{ data=await res.json() }catch(_){} } return {ok:res.ok,status:res.status,data} }catch(e){ return {ok:false,error:String(e)} } }
-    
-async function authLogin({ username, password, authUrl }){
-  try{
-    // Prefer POST with JSON
-    const res = await fetch(authUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
-    if (res.ok){
-      let data = null;
-      try { data = await res.json(); } catch(_) {}
-      if (data && data.ok === true){
-        if (data.settings && typeof data.settings === 'object'){
-          const cur = ensureSettings();
-          LS.set('settings', { ...cur, ...data.settings });
-        }
-        return { ok: true, data };
-      } else {
-        // If server returned JSON but not ok:true, treat as failure
-        return { ok:false, status: res.status, data };
-      }
-    }
-    // If server doesn't support POST yet, compat fallback to GET when 404/405
-    if (res.status === 404 || res.status === 405){
-      const url = new URL(authUrl);
-      url.searchParams.set('username', username);
-      url.searchParams.set('password', password);
-      const r2 = await fetch(url.toString(), { method: 'GET' });
-      let data2 = null;
-      try { data2 = await r2.json(); } catch(_) {}
-      if (r2.ok && data2 && data2.ok === true){
-        if (data2.settings && typeof data2.settings === 'object'){
-          const cur = ensureSettings();
-          LS.set('settings', { ...cur, ...data2.settings });
-        }
-        return { ok: true, data: data2 };
-      }
-      return { ok:false, status: r2.status, data: data2 };
-    }
-    return { ok:false, status: res.status };
-  }catch(e){
-    return { ok:false, error: String(e) };
-  } finally {
-    // zeroize password ref
-    password = '';
-  }
-}
-async function performLogin(e){
+    async function performLogin(e){
   e?.preventDefault?.();
   const u = (document.getElementById('loginUser')?.value || '').trim();
   const p = (document.getElementById('loginPass')?.value || '').trim();
@@ -448,7 +411,7 @@ async function performLogin(e){
     return;
   }
 
-  const r = await authLogin({ username: u, password: p, authUrl });  // uses getAuthWebhook() which now has a value
+  const r = await authViaGet(u, p);  // uses getAuthWebhook() which now has a value
   if (btn){ btn.disabled=false; btn.textContent='Sign in' }
 
   if (r.ok){
@@ -485,6 +448,10 @@ async function performLogin(e){
     });
   })();
 </script>
+
+  </body>
+</html>
+
 
   </body>
 </html>
