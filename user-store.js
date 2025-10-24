@@ -6,7 +6,7 @@
   'use strict';
 
   // ======= CONFIG =======
-  const USERS_ENDPOINT = 'https://<YOUR_N8N_DOMAIN>/webhook/users'; // e.g. https://n8n.example.com/webhook/users
+  const USERS_ENDPOINT = 'https://n8n.srv1079977.hstgr.cloud/webhook-test/users'; // e.g. https://n8n.example.com/webhook/users
   const tz = 'Africa/Johannesburg';
 
   const defaultElecTypes = [
