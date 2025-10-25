@@ -315,14 +315,23 @@
   (function fieldCaptureBootstrap(){
     'use strict';
     const tz='Africa/Johannesburg';
-    const AUTH_WEBHOOK = 'https://n8n.srv1079977.hstgr.cloud/webhook/InfoCheckValidatePassword';
-const DEFAULT_SETTINGS = {
-    authWebhook: 'https://n8n.srv1079977.hstgr.cloud/webhook/InfoCheckValidatePassword',
-    webhookUrl: 'https://n8n.srv1079977.hstgr.cloud/webhook/AuditUpload',
-    createUserWebhook: 'https://n8n.srv1079977.hstgr.cloud/webhook/UserInfo'
-};
+    const STARTUP_WEBHOOK = 'https://n8n.srv1079977.hstgr.cloud/webhook/StarupAndRetrieve';
     async function ensureAuthWebhookFromStartup(){
-  return AUTH_WEBHOOK;
+  const s = ensureSettings();
+  if ((s.authWebhook||'').trim()) return s.authWebhook.trim();
+  try {
+    const res = await fetch(STARTUP_WEBHOOK, { method:'GET', mode:'cors', credentials:'omit' });
+    if (!res.ok) return '';
+    let data = null;
+    try { data = await res.json(); } catch(_) {}
+    const auth = (data && (data.authWebhook || (data.settings && data.settings.authWebhook))) || '';
+    if (auth) {
+      s.authWebhook = auth;
+      LS.set('settings', s);
+      return auth;
+    }
+  } catch(_) {}
+  return '';
 }
 
     const LS=(()=>{ let mem={}; let ok=true; try{ const t='_ls_'; localStorage.setItem(t,'1'); localStorage.removeItem(t); }catch(e){ ok=false } return { get(k){ try{ if(ok){ const v=localStorage.getItem(k); return v?JSON.parse(v):null } return k in mem?mem[k]:null }catch(e){ return null } }, set(k,v){ try{ if(ok){ localStorage.setItem(k,JSON.stringify(v)) } else { mem[k]=v } }catch(e){} }, del(k){ try{ if(ok){ localStorage.removeItem(k) } else { delete mem[k] } }catch(e){} } } })();
@@ -359,7 +368,48 @@ const DEFAULT_SETTINGS = {
     function delWaterType(i){ const s=ensureSettings(); s.waterTypes.splice(i,1); LS.set('settings',s); renderTypeLists(); populateTypes() }
     function renderUsers(){ const box=document.getElementById('usersList'); if(!box)return; box.innerHTML='' }
     function setAuthUI(){ const cur=LS.get('currentUser'); const app=document.getElementById('app'); const login=document.getElementById('login'); const badge=document.getElementById('currentUserBadge'); const settingsBtn=document.getElementById('settingsBtn'); if(cur&&cur.u){ badge&&(badge.textContent='User: '+cur.u); app?.classList.remove('hidden'); login?.classList.add('hidden'); if(settingsBtn){ if(cur.u==='Gerhard.B') settingsBtn.classList.remove('hidden'); else settingsBtn.classList.add('hidden') } refreshKpis(); populateTypes(); loadDraft(); startGeoWatch(); const g=LS.get(userKey('lastGPS')); if(g){ updateBadge(g.latitude,g.longitude,g.accuracy) } } else { badge&&(badge.textContent='User: —'); app?.classList.add('hidden'); login?.classList.remove('hidden'); settingsBtn?.classList.add('hidden') } }
-    function getAuthWebhook(){ return AUTH_WEBHOOK }
+    function getAuthWebhook(){ const s=LS.get('settings')||{}; return (s.authWebhook||'').trim() }
+    function getCreateUserWebhook(){ const s=LS.get('settings')||{}; return (s.createUserWebhook||'').trim() }
+    async function authViaGet(username,password){ const url=getAuthWebhook(); if(!url) return {ok:false,reason:'no-auth-url'}; const qs=new URLSearchParams({username,password}).toString(); const full=url+(url.includes('?')?'&':'?')+qs; try{ const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),10000); const res=await fetch(full,{method:'GET',mode:'cors',credentials:'omit',signal:controller.signal}); clearTimeout(timer); let data=null; if(res.headers.get('content-type')?.includes('application/json')){ try{ data=await res.json() }catch(_){} } return {ok:res.ok,status:res.status,data} }catch(e){ return {ok:false,error:String(e)} } }
+    async function performLogin(e){
+  e?.preventDefault?.();
+  const u = (document.getElementById('loginUser')?.value || '').trim();
+  const p = (document.getElementById('loginPass')?.value || '').trim();
+  const btn = document.querySelector('#loginForm button[type="submit"]');
+  if (!u || !p){ alert('Enter username and password'); return }
+
+  if (btn){ btn.disabled = true; btn.textContent = 'Signing in…' }
+
+  if (u === 'Gerhard.B' && p === 'Gt55115511'){
+    LS.set('currentUser', { u, ts:new Date().toISOString(), tz: 'Africa/Johannesburg' });
+    if (btn){ btn.disabled=false; btn.textContent='Sign in' }
+    setAuthUI();
+    alert('login Success');
+    return;
+  }
+
+  const authUrl = await ensureAuthWebhookFromStartup();
+  if (!authUrl){
+    if (btn){ btn.disabled=false; btn.textContent='Sign in' }
+    alert('Startup failed: no auth webhook available');
+    return;
+  }
+
+  const r = await authViaGet(u, p);  // uses getAuthWebhook() which now has a value
+  if (btn){ btn.disabled=false; btn.textContent='Sign in' }
+
+  if (r.ok){
+    if (r.data && r.data.settings){
+      const cur = ensureSettings();
+      LS.set('settings', { ...cur, ...r.data.settings });
+    }
+    LS.set('currentUser', { u, ts:new Date().toISOString(), tz: 'Africa/Johannesburg' });
+    setAuthUI();
+    alert('login Success');
+  } else {
+    alert('Login failed');
+  }
+}
 
     function logout(){ LS.del('currentUser'); try{ const form=document.getElementById('captureForm'); form?.reset(); ['area','elecType','supplyCable','breakerState','waterType'].forEach(id=>{ const el=document.getElementById(id); if(el)el.value='' }) }catch(e){} setAuthUI() }
 
@@ -383,5 +433,67 @@ const DEFAULT_SETTINGS = {
   })();
 </script>
 
-  </body>
+  
+<script>
+(function hardwiredAuthPatch(){
+  const AUTH_WEBHOOK = 'https://n8n.srv1079977.hstgr.cloud/webhook/InfoCheckValidatePassword';
+  const DEFAULT_SETTINGS = {
+  authWebhook: 'https://n8n.srv1079977.hstgr.cloud/webhook/InfoCheckValidatePassword',
+  webhookUrl: 'https://n8n.srv1079977.hstgr.cloud/webhook/AuditUpload',
+  createUserWebhook: 'https://n8n.srv1079977.hstgr.cloud/webhook/UserInfo'
+};
+
+  async function performLogin(e){
+    try { e && e.preventDefault && e.preventDefault(); } catch(_) {}
+    const uEl = document.getElementById('loginUser');
+    const pEl = document.getElementById('loginPass');
+    const u = (uEl && uEl.value || '').trim();
+    const p = (pEl && pEl.value || '').trim();
+    const btn = document.querySelector('#loginForm button[type="submit"]');
+    if (!u || !p){ alert('Enter username and password'); return; }
+
+    if (btn){ btn.disabled = true; btn.textContent = 'Signing in…'; }
+
+    try {
+      const res = await fetch(AUTH_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: u, password: p })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      let data = null; try { data = await res.json(); } catch(_) {}
+
+      if (!data || data.ok !== true) throw new Error((data && data.message) || 'Invalid credentials');
+
+      const cur = (typeof ensureSettings === 'function') ? ensureSettings() : (window.settings || {});
+      const server = (data && data.settings) ? data.settings : {};
+      if (window.LS && typeof LS.set === 'function'){
+        LS.set('settings', { ...DEFAULT_SETTINGS, ...cur, ...server });
+        LS.set('currentUser', { u, ts:new Date().toISOString(), tz: 'Africa/Johannesburg' });
+      } else {
+        localStorage.setItem('settings', JSON.stringify({ ...DEFAULT_SETTINGS, ...cur, ...server }));
+        localStorage.setItem('currentUser', JSON.stringify({ u, ts:new Date().toISOString(), tz: 'Africa/Johannesburg' }));
+      }
+
+      if (typeof setAuthUI === 'function') setAuthUI();
+      alert('login Success');
+
+    } catch(err){
+      console.error('Login error:', err);
+      alert('Login failed: ' + String(err && err.message || err));
+    } finally {
+      if (btn){ btn.disabled = false; btn.textContent = 'Sign in'; }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const f = document.getElementById('loginForm');
+    if (f) {
+      f.addEventListener('submit', (e) => { e.preventDefault(); performLogin(e); });
+    }
+  });
+})();
+</script>
+
+</body>
 </html>
