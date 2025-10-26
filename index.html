@@ -5,6 +5,10 @@
     <title>Audit Capture App</title>
     <style>
       :root { --bg:#1e1e1e; --panel:#2a2a2a; --muted:#b0b0b0; --text:#ffffff; --accent:#22c55e; --danger:#ef4444; --warn:#f59e0b; }
+        .warn {
+            background: var(--warn);
+            color: #18130a;
+        }
       *{box-sizing:border-box}
       html,body{height:100%}
       body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui, Segoe UI, Roboto, Helvetica, Arial}
@@ -38,6 +42,7 @@
       .tabs{display:flex;gap:8px;margin:10px 0}
       .tabbtn{background:#444;color:#fff;border:1px solid rgba(255,255,255,.2)}
       .tabbtn.active{outline:2px solid #22c55e}
+        button:disabled {opacity: .55; cursor: not-allowed;filter: grayscale(.6)}
   @supports (padding: max(0px)) {
     body { padding-left:max(0px, env(safe-area-inset-left)); padding-right:max(0px, env(safe-area-inset-right)); }
   }
@@ -62,438 +67,774 @@
 
   </head>
   <body>
-    <div id="login" class="wrap">
-      <div class="card" style="max-width:520px;margin:10vh auto">
-        <h1>Sign in</h1>
-        <form id="loginForm">
-          <label for="loginUser">Username</label>
-          <input id="loginUser" autocomplete="username" />
-          <label for="loginPass">Password</label>
-          <input id="loginPass" type="password" autocomplete="current-password" />
-          <div class="btns">
-            <button class="primary" type="submit">Sign in</button>
+      <div id="login" class="wrap">
+          <div class="card" style="max-width:520px;margin:10vh auto">
+              <h1>Sign in</h1>
+              <form id="loginForm">
+                  <label for="loginUser">Username</label>
+                  <input id="loginUser" autocomplete="username" />
+                  <label for="loginPass">Password</label>
+                  <input id="loginPass" type="password" autocomplete="current-password" />
+                  <div class="btns">
+                      <button class="primary" type="submit">Sign in</button>
+                  </div>
+              </form>
           </div>
-        </form>
+      </div><div id="app" class="wrap hidden">
+          <div class="card">
+              <h1>Audit Capture App</h1>
+              <div class="top-actions">
+                  <span id="currentUserBadge" class="badge">User: —</span>
+                  <button class="iconbtn" id="logoutBtn" title="Logout">↩</button>
+                  <button id="settingsBtn" class="iconbtn hidden" title="Settings">⚙</button>
+              </div>
+              <div class="tabs">
+                  <button id="tabCapture" class="tabbtn active" type="button">Capture</button>
+                  <button id="tabOutbox" class="tabbtn" type="button">Outbox</button>
+              </div>
+              <div class="kpi" id="kpis">
+                  <div><strong id="queuedCount">0</strong> in Outbox</div>
+                  <div><strong id="sentCount">0</strong> sent today</div>
+                  <div><span class="badge" id="tz">Africa/Johannesburg</span></div>
+                  <div><span class="badge" id="gps">GPS: —</span></div>
+              </div>
+
+              <div id="viewCapture">
+                  <div class="btns" id="outboxBtns">
+                      <button class="warn" id="syncBtn" type="button">Upload Outbox</button>
+                  </div>
+
+                  <form id="captureForm" class="grid" autocomplete="off">
+                      <h2>General</h2>
+                      <div class="row">
+                          <div>
+                              <label for="stand">Stand Nr *</label>
+                              <input id="stand" required />
+                          </div>
+                          <div>
+                              <label for="area">Area *</label>
+                              <select id="area" required>
+                                  <option value="">— Select area —</option>
+                                  <option>Springbok</option>
+                                  <option>Bergsig IND</option>
+                                  <option>Bergsig</option>
+                                  <option>Maaitjieskloof</option>
+                                  <option>Okiep</option>
+                                  <option>Concordia</option>
+                                  <option>Nababeep</option>
+                                  <option>Carolusberg</option>
+                                  <option>Fonteintjie</option>
+                              </select>
+                          </div>
+                      </div>
+
+                      <div class="row">
+                          <div>
+                              <label for="street">Street Address *</label>
+                              <input id="street" required />
+                          </div>
+                          <div>
+                              <label for="clientInfo">Client info complete?</label>
+                              <select id="clientInfo">
+                                  <option value="Outstanding">Outstanding</option>
+                                  <option value="Correct">Correct</option>
+                                  <option value="Dup correct Fixed">Dup correct Fixed</option>
+                              </select>
+                          </div>
+                      </div>
+
+                      <h2>Electrical</h2>
+                      <div class="row">
+                          <div>
+                              <label for="elecSn">Electrical Meter SN</label>
+                              <input id="elecSn" inputmode="numeric" />
+                          </div>
+                          <div>
+                              <label for="elecType">Meter Type</label>
+                              <select id="elecType">
+                                  <option value="">—</option>
+                                  <option>Actaris</option>
+                                  <option>Ampy</option>
+                                  <option>CBI</option>
+                                  <option>Econ</option>
+                                  <option>Enligt</option>
+                                  <option>Hexing</option>
+                                  <option>Ihemeter 3PH WC</option>
+                                  <option>Kamstrup 1PH</option>
+                                  <option>Kamstrup 3PH</option>
+                                  <option>L+G Cashpower</option>
+                                  <option>L+G E460</option>
+                                  <option>TSK/3</option>
+                                  <option>VC1800</option>
+                                  <option>VC3000</option>
+                                  <option>VC3100</option>
+                                  <option>Unknown</option>
+                              </select>
+                          </div>
+                      </div>
+
+                      <div class="row">
+                          <div>
+                              <label for="minisub">Minisub / Bulk *</label>
+                              <input id="minisub" required />
+                          </div>
+                          <div>
+                              <label for="feeder">Feeder (Feeds From)</label>
+                              <input id="feeder" />
+                          </div>
+                      </div>
+
+                      <div class="row">
+                          <div>
+                              <label for="supplyCable">Supply Cable *</label>
+                              <select id="supplyCable" required>
+                                  <option value="">—</option>
+                                  <option>Yes</option>
+                                  <option>No</option>
+                              </select>
+                          </div>
+                          <div>
+                              <label for="breakerState">Breaker State *</label>
+                              <select id="breakerState" required>
+                                  <option value="">—</option>
+                                  <option>On</option>
+                                  <option>Off</option>
+                              </select>
+                          </div>
+                      </div>
+
+                      <h2>Water</h2>
+                      <div class="row">
+                          <div>
+                              <label for="waterSn">Water Meter SN</label>
+                              <input id="waterSn" inputmode="numeric" />
+                          </div>
+                          <div>
+                              <label for="waterType">Water Meter Type</label>
+                              <select id="waterType">
+                                  <option value="">—</option>
+                              </select>
+                          </div>
+                      </div>
+
+                      <h2>Notes</h2>
+                      <div>
+                          <label for="standNote">Stand note</label>
+                          <textarea id="standNote" rows="3" placeholder="Optional"></textarea>
+                      </div>
+
+                      <div class="btns">
+                          <button class="primary" type="submit">Submit</button>
+                      </div>
+                      <div class="status" id="status"></div>
+                  </form>
+              </div>
+
+              <div id="viewOutbox" class="hidden">
+                  <h2>Outbox</h2>
+                  <div class="btns">
+                      <button class="warn" id="syncBtn2" type="button">Upload Outbox</button>
+                  </div>
+                  <div style="width:100%;overflow:auto">
+                      <table style="width:100%;border-collapse:collapse;margin-top:10px" id="outboxTable">
+                          <thead>
+                              <tr>
+                                  <th style="text-align:left;border-bottom:1px solid #334155;padding:6px">#</th>
+                                  <th style="text-align:left;border-bottom:1px solid #334155;padding:6px">Stand</th>
+                                  <th style="text-align:left;border-bottom:1px solid #334155;padding:6px">Area</th>
+                                  <th style="text-align:left;border-bottom:1px solid #334155;padding:6px">Street</th>
+                                  <th style="text-align:left;border-bottom:1px solid #334155;padding:6px">Timestamp</th>
+                              </tr>
+                          </thead>
+                          <tbody></tbody>
+                      </table>
+                  </div>
+              </div>
+
+              <div class="footer">All timestamps saved in Africa/Johannesburg (UTC+2).</div>
+              <div id="debug" class="debug hidden"></div>
+          </div>
       </div>
-    </div><div id="app" class="wrap hidden">
-  <div class="card">
-    <h1>Audit Capture App</h1>
-    <div class="top-actions">
-      <span id="currentUserBadge" class="badge">User: —</span>
-      <button class="iconbtn" id="logoutBtn" title="Logout">↩</button>
-      <button id="settingsBtn" class="iconbtn hidden" title="Settings">⚙</button>
-    </div>
-    <div class="tabs">
-      <button id="tabCapture" class="tabbtn active" type="button">Capture</button>
-      <button id="tabOutbox" class="tabbtn" type="button">Outbox</button>
-    </div>
-    <div class="kpi" id="kpis">
-      <div><strong id="queuedCount">0</strong> in Outbox</div>
-      <div><strong id="sentCount">0</strong> sent today</div>
-      <div><span class="badge" id="tz">Africa/Johannesburg</span></div>
-      <div><span class="badge" id="gps">GPS: —</span></div>
-    </div>
 
-    <div id="viewCapture">
-      <div class="btns" id="outboxBtns">
-        <button class="warn" id="syncBtn" type="button">Upload Outbox</button>
-      </div>
+      <dialog id="settings">
+          <form method="dialog" class="card" style="max-width:680px;width:90vw;margin:auto">
+              <h2>Settings</h2>
+              <label for="webhook">n8n Webhook URL *</label>
+              <input id="webhook" placeholder="https://your-n8n/webhook/field-capture" required />
+              <label for="team">Team Name</label>
+              <input id="team" />
 
-      <form id="captureForm" class="grid" autocomplete="off">
-        <h2>General</h2>
-        <div class="row">
-          <div>
-            <label for="stand">Stand Nr *</label>
-            <input id="stand" required />
-          </div>
-          <div>
-            <label for="area">Area *</label>
-            <select id="area" required>
-              <option value="">— Select area —</option>
-              <option>Springbok</option>
-              <option>Bergsig IND</option>
-              <option>Bergsig</option>
-              <option>Maaitjieskloof</option>
-              <option>Okiep</option>
-              <option>Concordia</option>
-              <option>Nababeep</option>
-              <option>Carolusberg</option>
-              <option>Fonteintjie</option>
-            </select>
-          </div>
-        </div>
+              <h3 style="margin-top:16px;color:#e5e7eb">Users</h3>
+              <div id="usersList" class="taglist"></div>
+              <div class="row">
+                  <div>
+                      <label for="newUser">New username</label>
+                      <input id="newUser" autocomplete="off" />
+                  </div>
+                  <div>
+                      <label for="newPass">New password</label>
+                      <input id="newPass" type="password" autocomplete="new-password" />
+                  </div>
+                  <div style="display:flex;align-items:flex-end">
+                      <button id="addUserBtn" class="muted" type="button">Add User</button>
+                  </div>
+              </div>
 
-        <div class="row">
-          <div>
-            <label for="street">Street Address *</label>
-            <input id="street" required />
-          </div>
-          <div>
-            <label for="clientInfo">Client info complete?</label>
-            <select id="clientInfo">
-              <option value="Outstanding">Outstanding</option>
-              <option value="Correct">Correct</option>
-              <option value="Dup correct Fixed">Dup correct Fixed</option>
-            </select>
-          </div>
-        </div>
+              <label for="authWebhook">Auth Webhook (POST)</label> 
+              <input id="authWebhook" placeholder="https://your-n8n/webhook/auth" />
+              <label for="createUserWebhook">Create-User Webhook (POST)</label>
+              <input id="createUserWebhook" placeholder="https://your-n8n/webhook/create-user" />
 
-        <h2>Electrical</h2>
-        <div class="row">
-          <div>
-            <label for="elecSn">Electrical Meter SN</label>
-            <input id="elecSn" inputmode="numeric" />
-          </div>
-          <div>
-            <label for="elecType">Meter Type</label>
-            <select id="elecType">
-              <option value="">—</option>
-              <option>Actaris</option>
-              <option>Ampy</option>
-              <option>CBI</option>
-              <option>Econ</option>
-              <option>Enligt</option>
-              <option>Hexing</option>
-              <option>Ihemeter 3PH WC</option>
-              <option>Kamstrup 1PH</option>
-              <option>Kamstrup 3PH</option>
-              <option>L+G Cashpower</option>
-              <option>L+G E460</option>
-              <option>TSK/3</option>
-              <option>VC1800</option>
-              <option>VC3000</option>
-              <option>VC3100</option>
-              <option>Unknown</option>
-            </select>
-          </div>
-        </div>
+              <h3 style="margin-top:16px;color:#e5e7eb">Electrical meter types</h3>
+              <div class="taglist" id="elecTypesList"></div>
+              <div class="row">
+                  <div>
+                      <label for="elecTypeNew">Add new type</label>
+                      <input id="elecTypeNew" />
+                  </div>
+                  <div style="display:flex;align-items:flex-end">
+                      <button id="addElecBtn" class="muted" type="button">Add</button>
+                  </div>
+              </div>
 
-        <div class="row">
-          <div>
-            <label for="minisub">Minisub / Bulk *</label>
-            <input id="minisub" required />
-          </div>
-          <div>
-            <label for="feeder">Feeder (Feeds From)</label>
-            <input id="feeder" />
-          </div>
-        </div>
+              <h3 style="margin-top:10px;color:#e5e7eb">Water meter types</h3>
+              <div class="taglist" id="waterTypesList"></div>
+              <div class="row">
+                  <div>
+                      <label for="waterTypeNew">Add new type</label>
+                      <input id="waterTypeNew" />
+                  </div>
+                  <div style="display:flex;align-items:flex-end">
+                      <button id="addWaterBtn" class="muted" type="button">Add</button>
+                  </div>
+              </div>
 
-        <div class="row">
-          <div>
-            <label for="supplyCable">Supply Cable *</label>
-            <select id="supplyCable" required>
-              <option value="">—</option>
-              <option>Yes</option>
-              <option>No</option>
-            </select>
-          </div>
-          <div>
-            <label for="breakerState">Breaker State *</label>
-            <select id="breakerState" required>
-              <option value="">—</option>
-              <option>On</option>
-              <option>Off</option>
-            </select>
-          </div>
-        </div>
+              <div class="btns">
+                  <button id="saveSettingsBtn" class="primary" value="default">Save</button>
+                  <button id="closeSettingsBtn" class="muted" value="cancel">Close</button>
+              </div>
+          </form>
+      </dialog>
 
-        <h2>Water</h2>
-        <div class="row">
-          <div>
-            <label for="waterSn">Water Meter SN</label>
-            <input id="waterSn" inputmode="numeric" />
-          </div>
-          <div>
-            <label for="waterType">Water Meter Type</label>
-            <select id="waterType">
-              <option value="">—</option>
-            </select>
-          </div>
-        </div>
+      <script>
+          (function fieldCaptureBootstrap() {
+              'use strict';
+              const tz = 'Africa/Johannesburg';
+              // ---- IDs for idempotency & a tiny toast ----
+              function makeId() { return (crypto.randomUUID?.() || (Date.now() + "-" + Math.random())).toString(); }
+              function ensureClientId() {
+                  const key = 'client_id';
+                  let id = LS.get(key);
+                  if (!id) { id = makeId(); LS.set(key, id); }
+                  return id;
+              }
+              // Guards FIRST
+              let __wasOffline = null;     // remembers last online/offline state
+              let __lastToastTs = 0;       // last toast timestamp for throttling
+              // Minimal toast
+              function toast(msg, opts) {
+                  opts = opts || {};
+                  const now = Date.now();
+                  const win = typeof opts.throttleMs === 'number' ? opts.throttleMs : 1500;
+                  if (now - __lastToastTs < win) return;  // prevent spam bursts
+                  __lastToastTs = now;
 
-        <h2>Notes</h2>
-        <div>
-          <label for="standNote">Stand note</label>
-          <textarea id="standNote" rows="3" placeholder="Optional"></textarea>
-        </div>
+                  const t = document.createElement('div');
+                  t.textContent = msg;
+                  Object.assign(t.style, {
+                      position: 'fixed', left: '50%', transform: 'translateX(-50%)',
+                      bottom: '18px', padding: '10px 14px', borderRadius: '10px',
+                      background: 'rgba(0,0,0,.8)', color: '#fff', fontSize: '14px',
+                      border: '1px solid rgba(255,255,255,.15)', zIndex: 99999,
+                      maxWidth: '90%', textAlign: 'center'
+                  });
+                  document.body.appendChild(t);
+                  setTimeout(() => t.remove(), opts.duration || 2000);
+              }
 
-        <div class="btns">
-          <button class="primary" type="submit">Submit</button>
-        </div>
-        <div class="status" id="status"></div>
-      </form>
-    </div>
+              window.addEventListener('beforeunload', (e) => {
+                  const out = LS.get(userKey('outbox')) || [];
+                  if (out.length > 0) {
+                      e.preventDefault();
+                      e.returnValue = '';
+                  }
+              });
+              // Use your test discovery URL for now
+              const STARTUP_WEBHOOK = 'https://n8n.srv1079977.hstgr.cloud/webhook-test/StarupAndRetrieve';
+              const DISCOVERY_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
 
-    <div id="viewOutbox" class="hidden">
-      <h2>Outbox</h2>
-      <div class="btns">
-        <button class="warn" id="syncBtn2" type="button">Upload Outbox</button>
-      </div>
-      <div style="width:100%;overflow:auto">
-        <table style="width:100%;border-collapse:collapse;margin-top:10px" id="outboxTable">
-          <thead>
-            <tr>
-              <th style="text-align:left;border-bottom:1px solid #334155;padding:6px">#</th>
-              <th style="text-align:left;border-bottom:1px solid #334155;padding:6px">Stand</th>
-              <th style="text-align:left;border-bottom:1px solid #334155;padding:6px">Area</th>
-              <th style="text-align:left;border-bottom:1px solid #334155;padding:6px">Street</th>
-              <th style="text-align:left;border-bottom:1px solid #334155;padding:6px">Timestamp</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
+              function mergeSettings(server) {
+                  // Load current, merge, and normalize webhook/webhookUrl
+                  let cur = {};
+                  try { cur = JSON.parse(localStorage.getItem('settings') || '{}'); } catch { }
+                  const raw = { ...cur, ...server };
+                  const unified = (raw.webhook || raw.webhookUrl || '').trim();
+                  const merged = { ...raw, webhook: unified, webhookUrl: unified };
+                  localStorage.setItem('settings', JSON.stringify(merged));
+              }
 
-    <div class="footer">All timestamps saved in Africa/Johannesburg (UTC+2).</div>
-    <div id="debug" class="debug hidden"></div>
-  </div>
-</div>
+              async function discoverConfig() {
+                  // Use a small cache so we don’t hammer the server
+                  const now = Date.now();
+                  let cache = null;
+                  try { cache = JSON.parse(localStorage.getItem('__discovery_cache__') || 'null'); } catch { }
 
-<dialog id="settings">
-  <form method="dialog" class="card" style="max-width:680px;width:90vw;margin:auto">
-    <h2>Settings</h2>
-    <label for="webhook">n8n Webhook URL *</label>
-    <input id="webhook" placeholder="https://your-n8n/webhook/field-capture" required />
-    <label for="team">Team Name</label>
-    <input id="team" />
+                  if (cache && cache.ts && (now - cache.ts < DISCOVERY_TTL_MS) && cache.settings) {
+                      mergeSettings(cache.settings);
+                      return { ok: true, cached: true };
+                  }
 
-    <h3 style="margin-top:16px;color:#e5e7eb">Users</h3>
-    <div id="usersList" class="taglist"></div>
-    <div class="row">
-      <div>
-        <label for="newUser">New username</label>
-        <input id="newUser" autocomplete="off" />
-      </div>
-      <div>
-        <label for="newPass">New password</label>
-        <input id="newPass" type="password" autocomplete="new-password" />
-      </div>
-      <div style="display:flex;align-items:flex-end">
-        <button id="addUserBtn" class="muted" type="button">Add User</button>
-      </div>
-    </div>
+                  try {
+                      const controller = new AbortController();
+                      const timer = setTimeout(() => controller.abort(), 8000);
+                      const res = await fetch(STARTUP_WEBHOOK, { method: 'GET', mode: 'cors', credentials: 'omit', signal: controller.signal });
+                      clearTimeout(timer);
+                      if (!res.ok) throw new Error('Discovery HTTP ' + res.status);
+                      const data = await res.json().catch(() => null);
+                      const serverSettings = (data && (data.settings || data)) || null;
+                      if (serverSettings) {
+                          mergeSettings(serverSettings);
+                          localStorage.setItem('__discovery_cache__', JSON.stringify({ ts: now, settings: serverSettings }));
+                          return { ok: true, cached: false };
+                      }
+                  } catch (_) { /* ignore; we fall back to existing settings */ }
 
-    <label for="authWebhook">Auth Webhook (GET)</label>
-    <input id="authWebhook" placeholder="https://your-n8n/webhook/auth" />
-    <label for="createUserWebhook">Create-User Webhook (POST)</label>
-    <input id="createUserWebhook" placeholder="https://your-n8n/webhook/create-user" />
+                  return { ok: false };
+              }
 
-    <h3 style="margin-top:16px;color:#e5e7eb">Electrical meter types</h3>
-    <div class="taglist" id="elecTypesList"></div>
-    <div class="row">
-      <div>
-        <label for="elecTypeNew">Add new type</label>
-        <input id="elecTypeNew" />
-      </div>
-      <div style="display:flex;align-items:flex-end">
-        <button id="addElecBtn" class="muted" type="button">Add</button>
-      </div>
-    </div>
+              function updateOnlineUi() {
+                  const submitBtn = document.querySelector('#captureForm button[type="submit"]');
+                  const offline = !navigator.onLine;
+                  if (submitBtn) submitBtn.disabled = offline;
 
-    <h3 style="margin-top:10px;color:#e5e7eb">Water meter types</h3>
-    <div class="taglist" id="waterTypesList"></div>
-    <div class="row">
-      <div>
-        <label for="waterTypeNew">Add new type</label>
-        <input id="waterTypeNew" />
-      </div>
-      <div style="display:flex;align-items:flex-end">
-        <button id="addWaterBtn" class="muted" type="button">Add</button>
-      </div>
-    </div>
+                  // Also gray/disable Upload buttons based on Outbox length
+                  // (refreshKpis already does this; call it if you want to force-refresh)
+                  // refreshKpis(); // optional if you want tighter coupling
+              }
 
-    <div class="btns">
-      <button id="saveSettingsBtn" class="primary" value="default">Save</button>
-      <button id="closeSettingsBtn" class="muted" value="cancel">Close</button>
-    </div>
-  </form>
-</dialog>
+              // React to connectivity changes
+              window.addEventListener('online', () => {
+                  updateOnlineUi();
+                  if (__wasOffline !== false) {            // only if we were offline before
+                      toast('Back online');
+                  }
+                  __wasOffline = false;
+              });
 
-<script>
-  (function fieldCaptureBootstrap(){
-    'use strict';
-    const tz='Africa/Johannesburg';
-    const STARTUP_WEBHOOK = 'https://n8n.srv1079977.hstgr.cloud/webhook/StarupAndRetrieve';
-    async function ensureAuthWebhookFromStartup(){
-  const s = ensureSettings();
-  if ((s.authWebhook||'').trim()) return s.authWebhook.trim();
-  try {
-    const res = await fetch(STARTUP_WEBHOOK, { method:'GET', mode:'cors', credentials:'omit' });
-    if (!res.ok) return '';
-    let data = null;
-    try { data = await res.json(); } catch(_) {}
-    const auth = (data && (data.authWebhook || (data.settings && data.settings.authWebhook))) || '';
-    if (auth) {
-      s.authWebhook = auth;
-      LS.set('settings', s);
-      return auth;
-    }
-  } catch(_) {}
-  return '';
-}
+              window.addEventListener('offline', () => {
+                  updateOnlineUi();
+                  if (__wasOffline !== true) {             // only if we were online before
+                      toast('You are offline. Submissions will queue to Outbox.');
+                  }
+                  __wasOffline = true;
+              });
 
-    const LS=(()=>{ let mem={}; let ok=true; try{ const t='_ls_'; localStorage.setItem(t,'1'); localStorage.removeItem(t); }catch(e){ ok=false } return { get(k){ try{ if(ok){ const v=localStorage.getItem(k); return v?JSON.parse(v):null } return k in mem?mem[k]:null }catch(e){ return null } }, set(k,v){ try{ if(ok){ localStorage.setItem(k,JSON.stringify(v)) } else { mem[k]=v } }catch(e){} }, del(k){ try{ if(ok){ localStorage.removeItem(k) } else { delete mem[k] } }catch(e){} } } })();
-    function userKey(k){ const u=LS.get('currentUser'); return (u&&u.u)?k+'@'+u.u:'guest:'+k }
-    function fmt(n){return(n||0).toLocaleString('en-ZA')}
-    const defaultsElec=['Actaris','Ampy','CBI','Econ','Enligt','Hexing','Ihemeter 3PH WC','Kamstrup 1PH','Kamstrup 3PH','L+G Cashpower','L+G E460','TSK/3','VC1800','VC3000','VC3100','Unknown'];
-    const defaultsWater=['Lesira','Kent','Sensus','Elster'];
-    function ensureSettings(){ const s=LS.get('settings')||{}; if(!Array.isArray(s.elecTypes)) s.elecTypes=[...defaultsElec]; else { const merged=[...new Set([...s.elecTypes,...defaultsElec])]; const i=merged.indexOf('Unknown'); if(i>-1) merged.splice(i,1); merged.sort((a,b)=>a.localeCompare(b)); merged.push('Unknown'); s.elecTypes=merged } if(!Array.isArray(s.waterTypes)) s.waterTypes=[...defaultsWater]; if(typeof s.webhook!=='string') s.webhook=''; if(typeof s.team!=='string') s.team=''; if(typeof s.authWebhook!=='string') s.authWebhook=''; if(typeof s.createUserWebhook!=='string') s.createUserWebhook=''; LS.set('settings',s); return s }
-    function populateTypes(){ const s=ensureSettings(); const e=document.getElementById('elecType'); const w=document.getElementById('waterType'); function set(sel,arr){ if(!sel) return; const cur=sel.value; sel.innerHTML=''; const o=document.createElement('option'); o.value=''; o.textContent='—'; sel.appendChild(o); arr.forEach(t=>{ const opt=document.createElement('option'); opt.textContent=t; sel.appendChild(opt) }); const other=document.createElement('option'); other.textContent='Other'; sel.appendChild(other); let found=false; for(let i=0;i<sel.options.length;i++){ if(sel.options[i].textContent===cur){ found=true; break } } sel.value=found?cur:'' } set(e,s.elecTypes); set(w,s.waterTypes) }
-    function refreshKpis(){ const out=LS.get(userKey('outbox'))||[]; const qc=document.getElementById('queuedCount'); if(qc) qc.textContent=fmt(out.length); const today=new Date().toLocaleDateString('en-CA',{timeZone:tz}); const sentLog=LS.get(userKey('sentLog'))||{}; const sc=document.getElementById('sentCount'); if(sc) sc.textContent=fmt(sentLog[today]||0); const tab=document.getElementById('tabOutbox'); if(tab) tab.textContent='Outbox ('+out.length+')' }
-    function renderOutbox(){ const tb=document.querySelector('#outboxTable tbody'); if(!tb) return; tb.innerHTML=''; const out=LS.get(userKey('outbox'))||[]; out.forEach((it,i)=>{ const tr=document.createElement('tr'); const ts=it&&it.meta&&it.meta.submitted_at?new Date(it.meta.submitted_at).toLocaleString():'—'; const stand=it?.record?.stand||''; const area=it?.record?.area||''; const street=it?.record?.street||''; tr.innerHTML='<td style="padding:6px;border-bottom:1px solid #334155">'+(i+1)+'</td><td style="padding:6px;border-bottom:1px solid #334155">'+stand+'</td><td style="padding:6px;border-bottom:1px solid #334155">'+area+'</td><td style="padding:6px;border-bottom:1px solid #334155">'+street+'</td><td style="padding:6px;border-bottom:1px solid #334155">'+ts+'</td>'; tb.appendChild(tr) }) }
-    function switchTab(which){ const cap=document.getElementById('viewCapture'); const out=document.getElementById('viewOutbox'); const b1=document.getElementById('tabCapture'); const b2=document.getElementById('tabOutbox'); if(which==='outbox'){ cap?.classList.add('hidden'); out?.classList.remove('hidden'); b1?.classList.remove('active'); b2?.classList.add('active'); renderOutbox() } else { out?.classList.add('hidden'); cap?.classList.remove('hidden'); b2?.classList.remove('active'); b1?.classList.add('active') } }
-    function updateBadge(lat,lon,acc){ const el=document.getElementById('gps'); if(!el)return; el.textContent='GPS: '+lat.toFixed(6)+', '+lon.toFixed(6)+' (±'+Math.round(acc)+' m)' }
-    function startGeoWatch(){ const gpsEl=document.getElementById('gps'); if(!('geolocation' in navigator)){ gpsEl&&(gpsEl.textContent='GPS: unavailable'); return } gpsEl&&(gpsEl.textContent='GPS: locating…'); navigator.geolocation.watchPosition(pos=>{ const {latitude,longitude,accuracy}=pos.coords; updateBadge(latitude,longitude,accuracy); LS.set(userKey('lastGPS'),{latitude,longitude,accuracy,ts:new Date().toISOString()}) },()=>{}, {enableHighAccuracy:true,maximumAge:5000,timeout:10000}) }
-    const FIELD_IDS=['stand','area','street','clientInfo','elecSn','elecType','minisub','feeder','supplyCable','breakerState','waterSn','waterType','standNote'];
-    function gather(){ const d={}; FIELD_IDS.forEach(id=>{ const el=document.getElementById(id); if(el)d[id]=el.value }); d._ts=new Date().toISOString(); return d }
-    function applyDraft(d){ if(!d)return; FIELD_IDS.forEach(id=>{ if(d[id]!==undefined){ const el=document.getElementById(id); if(el)el.value=d[id] } }) }
-    function saveDraft(){ LS.set(userKey('draft'),gather()) }
-    function loadDraft(){ const d=LS.get(userKey('draft')); if(d)applyDraft(d) }
-    function resetForm(){ const form=document.getElementById('captureForm'); if(form)form.reset(); LS.del(userKey('draft')); populateTypes(); ['area','elecType','supplyCable','breakerState','waterType'].forEach(id=>{ const el=document.getElementById(id); if(el)el.value='' }); const s=document.getElementById('status'); if(s)s.textContent=''; const first=document.getElementById('stand'); first&&first.focus() }
-    function val(id){ const el=document.getElementById(id); return (el&&el.value?el.value:'').trim() }
-    async function sendToWebhook(body,url){ try{ const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return {ok:res.ok} }catch(e){ return {ok:false} } }
-    function queuePayload(p){ const out=LS.get(userKey('outbox'))||[]; out.push(p); LS.set(userKey('outbox'),out); refreshKpis(); renderOutbox() }
-    async function syncOutbox(opts){ opts=opts||{silent:false}; const s=LS.get('settings')||{}; if(!s.webhook){ if(!opts.silent)alert('Set your webhook in Settings'); return } let out=LS.get(userKey('outbox'))||[]; if(out.length===0){ if(!opts.silent)alert('Nothing to sync'); return } const delayMs=2000; let sent=0; const finalize=(hadFail)=>{ if(!opts.silent){ const remaining=(LS.get(userKey('outbox'))||[]).length; let msg='Synced '+sent+' item(s)'; msg+= hadFail ? '; stopped on an error. Remaining: '+remaining : '; done.'; alert(msg) } }; const processNext=async()=>{ out=LS.get(userKey('outbox'))||[]; if(out.length===0){ finalize(false); return } const item=out[0]; const r=await sendToWebhook(item,s.webhook); if(r&&r.ok){ out.shift(); LS.set(userKey('outbox'),out); const today=new Date().toLocaleDateString('en-CA',{timeZone:tz}); const log=LS.get(userKey('sentLog'))||{}; log[today]=(log[today]||0)+1; LS.set('userKey-sentLog',log); sent++; refreshKpis(); renderOutbox(); setTimeout(processNext,delayMs) } else { finalize(true) } }; processNext() }
-    async function onSubmit(e){ e.preventDefault(); const s=ensureSettings(); const gps=LS.get(userKey('lastGPS')); const cur=LS.get('currentUser'); const payload={ meta:{ version:1, submitted_at:new Date().toISOString(), timezone:tz, team:s.team||null, ua:navigator.userAgent, user: cur&&cur.u?cur.u:null }, record:{ stand:val('stand'), area:val('area'), street:val('street'), client_info:val('clientInfo'), electrical:{ sn:val('elecSn'), type:val('elecType'), minisub:val('minisub'), feeder:val('feeder'), supply_cable:val('supplyCable'), breaker_state:val('breakerState') }, water:{ sn:val('waterSn'), type:val('waterType') }, stand_note: val('standNote'), gps:gps||null } }; if(!val('stand')||!val('area')||!val('street')||!val('minisub')||!val('supplyCable')||!val('breakerState')){ alert('Please fill all required fields: Stand Nr, Area, Street Address, Minisub / Bulk, Supply Cable, Breaker State'); return } if(!s.webhook){ queuePayload(payload); resetForm(); alert('No webhook set – queued to Outbox'); return } const r=await sendToWebhook(payload,s.webhook); if(r&&r.ok){ const today=new Date().toLocaleDateString('en-CA',{timeZone:tz}); const log=LS.get(userKey('sentLog'))||{}; log[today]=(log[today]||0)+1; LS.set('userKey-sentLog',log); refreshKpis(); resetForm(); alert('Submitted ✔'); } else { queuePayload(payload); resetForm(); alert('Offline or server error – queued to Outbox') } }
+              const LS = (() => { let mem = {}; let ok = true; try { const t = '_ls_'; localStorage.setItem(t, '1'); localStorage.removeItem(t); } catch (e) { ok = false } return { get(k) { try { if (ok) { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null } return k in mem ? mem[k] : null } catch (e) { return null } }, set(k, v) { try { if (ok) { localStorage.setItem(k, JSON.stringify(v)) } else { mem[k] = v } } catch (e) { } }, del(k) { try { if (ok) { localStorage.removeItem(k) } else { delete mem[k] } } catch (e) { } } } })();
+              function userKey(k) { const u = LS.get('currentUser'); return (u && u.u) ? k + '@' + u.u : 'guest:' + k }
+              function fmt(n) { return (n || 0).toLocaleString('en-ZA') }
+              const defaultsElec = ['Actaris', 'Ampy', 'CBI', 'Econ', 'Enligt', 'Hexing', 'Ihemeter 3PH WC', 'Kamstrup 1PH', 'Kamstrup 3PH', 'L+G Cashpower', 'L+G E460', 'TSK/3', 'VC1800', 'VC3000', 'VC3100', 'Unknown'];
+              const defaultsWater = ['Lesira', 'Kent', 'Sensus', 'Elster'];
+              function ensureSettings() {
+                  const s = LS.get('settings') || {};
 
-    function loadSettings(){ const s=ensureSettings(); const wh=document.getElementById('webhook'); const team=document.getElementById('team'); const auth=document.getElementById('authWebhook'); const cu=document.getElementById('createUserWebhook'); if(wh)wh.value=s.webhook||''; if(team)team.value=s.team||''; if(auth)auth.value=s.authWebhook||''; if(cu)cu.value=s.createUserWebhook||'' }
-    function saveSettings(){ const wh=(document.getElementById('webhook')?.value||'').trim(); const team=(document.getElementById('team')?.value||'').trim(); const auth=(document.getElementById('authWebhook')?.value||'').trim(); const cu=(document.getElementById('createUserWebhook')?.value||'').trim(); const s=ensureSettings(); s.webhook=wh; s.team=team; s.authWebhook=auth; s.createUserWebhook=cu; LS.set('settings',s); const dlg=document.getElementById('settings'); dlg?.close?.(); populateTypes(); alert('Settings saved') }
-    function openSettings(){ const cur=LS.get('currentUser'); if(!(cur&&cur.u==='Gerhard.B')){ alert('Only Gerhard.B can open Settings'); return } const dlg=document.getElementById('settings'); if(dlg&&typeof dlg.showModal==='function'){ dlg.showModal() } else if(dlg){ dlg.setAttribute('open','') } loadSettings(); renderUsers(); renderTypeLists() }
-    function renderTypeLists(){ const s=ensureSettings(); const el=document.getElementById('elecTypesList'); const wl=document.getElementById('waterTypesList'); if(el){ el.innerHTML=''; s.elecTypes.forEach((t,i)=>{ const tag=document.createElement('span'); tag.className='tag'; tag.innerHTML=t+' <button type="button" data-del-elec="'+i+'">✕</button>'; el.appendChild(tag) }) } if(wl){ wl.innerHTML=''; s.waterTypes.forEach((t,i)=>{ const tag=document.createElement('span'); tag.className='tag'; tag.innerHTML=t+' <button type="button" data-del-water="'+i+'">✕</button>'; wl.appendChild(tag) }) } }
-    function addElecType(){ const v=(document.getElementById('elecTypeNew')?.value||'').trim(); if(!v)return; const s=ensureSettings(); if(!s.elecTypes.includes(v)){ if(v!=='Unknown'){ s.elecTypes.splice(s.elecTypes.length-1,0,v); s.elecTypes=[...new Set(s.elecTypes.filter(x=>x!=='Unknown'))].sort((a,b)=>a.localeCompare(b)); s.elecTypes.push('Unknown') } } LS.set('settings',s); const el=document.getElementById('elecTypeNew'); if(el)el.value=''; renderTypeLists(); populateTypes() }
-    function delElecType(i){ const s=ensureSettings(); s.elecTypes.splice(i,1); if(!s.elecTypes.includes('Unknown'))s.elecTypes.push('Unknown'); s.elecTypes=[...new Set(s.elecTypes.filter(x=>x!=='Unknown'))].sort((a,b)=>a.localeCompare(b)); s.elecTypes.push('Unknown'); LS.set('settings',s); renderTypeLists(); populateTypes() }
-    function addWaterType(){ const v=(document.getElementById('waterTypeNew')?.value||'').trim(); if(!v)return; const s=ensureSettings(); if(!s.waterTypes.includes(v))s.waterTypes.push(v); LS.set('settings',s); const el=document.getElementById('waterTypeNew'); if(el)el.value=''; renderTypeLists(); populateTypes() }
-    function delWaterType(i){ const s=ensureSettings(); s.waterTypes.splice(i,1); LS.set('settings',s); renderTypeLists(); populateTypes() }
-    function renderUsers(){ const box=document.getElementById('usersList'); if(!box)return; box.innerHTML='' }
-    function setAuthUI(){ const cur=LS.get('currentUser'); const app=document.getElementById('app'); const login=document.getElementById('login'); const badge=document.getElementById('currentUserBadge'); const settingsBtn=document.getElementById('settingsBtn'); if(cur&&cur.u){ badge&&(badge.textContent='User: '+cur.u); app?.classList.remove('hidden'); login?.classList.add('hidden'); if(settingsBtn){ if(cur.u==='Gerhard.B') settingsBtn.classList.remove('hidden'); else settingsBtn.classList.add('hidden') } refreshKpis(); populateTypes(); loadDraft(); startGeoWatch(); const g=LS.get(userKey('lastGPS')); if(g){ updateBadge(g.latitude,g.longitude,g.accuracy) } } else { badge&&(badge.textContent='User: —'); app?.classList.add('hidden'); login?.classList.remove('hidden'); settingsBtn?.classList.add('hidden') } }
-    function getAuthWebhook(){ const s=LS.get('settings')||{}; return (s.authWebhook||'').trim() }
-    function getCreateUserWebhook(){ const s=LS.get('settings')||{}; return (s.createUserWebhook||'').trim() }
-    async function authViaGet(username,password){ const url=getAuthWebhook(); if(!url) return {ok:false,reason:'no-auth-url'}; const qs=new URLSearchParams({username,password}).toString(); const full=url+(url.includes('?')?'&':'?')+qs; try{ const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),10000); const res=await fetch(full,{method:'GET',mode:'cors',credentials:'omit',signal:controller.signal}); clearTimeout(timer); let data=null; if(res.headers.get('content-type')?.includes('application/json')){ try{ data=await res.json() }catch(_){} } return {ok:res.ok,status:res.status,data} }catch(e){ return {ok:false,error:String(e)} } }
-    async function performLogin(e){
-  e?.preventDefault?.();
-  const u = (document.getElementById('loginUser')?.value || '').trim();
-  const p = (document.getElementById('loginPass')?.value || '').trim();
-  const btn = document.querySelector('#loginForm button[type="submit"]');
-  if (!u || !p){ alert('Enter username and password'); return }
+                  // Existing arrays & basics
+                  if (!Array.isArray(s.elecTypes)) s.elecTypes = [...defaultsElec];
+                  else {
+                      const merged = [...new Set([...s.elecTypes, ...defaultsElec])];
+                      const i = merged.indexOf('Unknown');
+                      if (i > -1) merged.splice(i, 1);
+                      merged.sort((a, b) => a.localeCompare(b));
+                      merged.push('Unknown');
+                      s.elecTypes = merged;
+                  }
 
-  if (btn){ btn.disabled = true; btn.textContent = 'Signing in…' }
+                  if (!Array.isArray(s.waterTypes)) s.waterTypes = [...defaultsWater];
 
-  if (u === 'Gerhard.B' && p === 'Gt55115511'){
-    LS.set('currentUser', { u, ts:new Date().toISOString(), tz: 'Africa/Johannesburg' });
-    if (btn){ btn.disabled=false; btn.textContent='Sign in' }
-    setAuthUI();
-    alert('login Success');
-    return;
-  }
+                  if (typeof s.team !== 'string') s.team = '';
+                  if (typeof s.authWebhook !== 'string') s.authWebhook = '';
+                  if (typeof s.createUserWebhook !== 'string') s.createUserWebhook = '';
 
-  const authUrl = await ensureAuthWebhookFromStartup();
-  if (!authUrl){
-    if (btn){ btn.disabled=false; btn.textContent='Sign in' }
-    alert('Startup failed: no auth webhook available');
-    return;
-  }
+                  // Normalize both keys to the same URL
+                  if (typeof s.webhook !== 'string') s.webhook = '';
+                  if (typeof s.webhookUrl !== 'string') s.webhookUrl = '';
+                  const unified = (s.webhook || s.webhookUrl || '').trim();
+                  s.webhook = unified;
+                  s.webhookUrl = unified;
 
-  const r = await authViaGet(u, p);  // uses getAuthWebhook() which now has a value
-  if (btn){ btn.disabled=false; btn.textContent='Sign in' }
+                  LS.set('settings', s);
+                  return s;
+              }
+              function populateTypes() { const s = ensureSettings(); const e = document.getElementById('elecType'); const w = document.getElementById('waterType'); function set(sel, arr) { if (!sel) return; const cur = sel.value; sel.innerHTML = ''; const o = document.createElement('option'); o.value = ''; o.textContent = '—'; sel.appendChild(o); arr.forEach(t => { const opt = document.createElement('option'); opt.textContent = t; sel.appendChild(opt) }); const other = document.createElement('option'); other.textContent = 'Other'; sel.appendChild(other); let found = false; for (let i = 0; i < sel.options.length; i++) { if (sel.options[i].textContent === cur) { found = true; break } } sel.value = found ? cur : '' } set(e, s.elecTypes); set(w, s.waterTypes) }
+              function refreshKpis() {
+                  const out = LS.get(userKey('outbox')) || [];
+                  const qc = document.getElementById('queuedCount');
+                  if (qc) qc.textContent = fmt(out.length);
 
-  if (r.ok){
-    if (r.data && r.data.settings){
-      const cur = ensureSettings();
-      LS.set('settings', { ...cur, ...r.data.settings });
-    }
-    LS.set('currentUser', { u, ts:new Date().toISOString(), tz: 'Africa/Johannesburg' });
-    setAuthUI();
-    alert('login Success');
-  } else {
-    alert('Login failed');
-  }
-}
+                  const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+                  const sentLog = LS.get(userKey('sentLog')) || {};
+                  const sc = document.getElementById('sentCount');
+                  if (sc) sc.textContent = fmt(sentLog[today] || 0);
 
-    function logout(){ LS.del('currentUser'); try{ const form=document.getElementById('captureForm'); form?.reset(); ['area','elecType','supplyCable','breakerState','waterType'].forEach(id=>{ const el=document.getElementById(id); if(el)el.value='' }) }catch(e){} setAuthUI() }
+                  const tab = document.getElementById('tabOutbox');
+                  if (tab) tab.textContent = 'Outbox (' + out.length + ')';
 
-    document.addEventListener('DOMContentLoaded',()=>{
-      document.getElementById('tz').textContent=tz;
-      document.getElementById('tabCapture').addEventListener('click',()=>switchTab('capture'));
-      document.getElementById('tabOutbox').addEventListener('click',()=>switchTab('outbox'));
-      document.getElementById('loginForm').addEventListener('submit',performLogin);
-      document.getElementById('logoutBtn').addEventListener('click',logout);
-      document.getElementById('settingsBtn').addEventListener('click',openSettings);
-      document.getElementById('captureForm').addEventListener('submit',onSubmit);
-      document.getElementById('syncBtn').addEventListener('click',()=>syncOutbox());
-      document.getElementById('syncBtn2').addEventListener('click',()=>syncOutbox());
-      document.getElementById('addUserBtn').addEventListener('click',async (e)=>{ e.preventDefault(); const user=(document.getElementById('newUser')?.value||'').trim(); const pass=(document.getElementById('newPass')?.value||'').trim(); if(!user||!pass){ alert('Enter username and password'); return } const url=getCreateUserWebhook(); if(!url){ alert('Create-User Webhook not set'); return } try{ const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass}),mode:'cors',credentials:'omit'}); if(!res.ok){ alert('Create user failed'); return } document.getElementById('newUser').value=''; document.getElementById('newPass').value=''; alert('User file created') }catch(err){ alert('Create user failed') } });
-      document.getElementById('elecTypesList').addEventListener('click',e=>{ const t=e.target; const idx=t?.getAttribute('data-del-elec'); if(idx!=null){ delElecType(parseInt(idx,10)) } });
-      document.getElementById('waterTypesList').addEventListener('click',e=>{ const t=e.target; const idx=t?.getAttribute('data-del-water'); if(idx!=null){ delWaterType(parseInt(idx,10)) } });
-      const saveBtn=document.getElementById('saveSettingsBtn'); if(saveBtn){ saveBtn.addEventListener('click',(e)=>{ e.preventDefault(); saveSettings() }) }
-      const closeBtn=document.getElementById('closeSettingsBtn'); if(closeBtn){ closeBtn.addEventListener('click',(e)=>{ e.preventDefault(); document.getElementById('settings')?.close?.() }) }
-      setAuthUI();
-    });
-  })();
-</script>
+                  // Grey/disable the two sync buttons when empty
+                  const b1 = document.getElementById('syncBtn');
+                  const b2 = document.getElementById('syncBtn2');
+                  const disabled = out.length === 0;
+                  if (b1) b1.disabled = disabled;
+                  if (b2) b2.disabled = disabled;
+              }
+              setInterval(() => {
+                  if (!navigator.onLine) return;
+                  const out = LS.get(userKey('outbox')) || [];
+                  if (out.length > 0) syncOutbox({ silent: true });
+              }, 25000);
+              discoverConfig(); // fire & forget – updates settings when discovery returns
+              function renderOutbox() { const tb = document.querySelector('#outboxTable tbody'); if (!tb) return; tb.innerHTML = ''; const out = LS.get(userKey('outbox')) || []; out.forEach((it, i) => { const tr = document.createElement('tr'); const ts = it && it.meta && it.meta.submitted_at ? new Date(it.meta.submitted_at).toLocaleString() : '—'; const stand = it?.record?.stand || ''; const area = it?.record?.area || ''; const street = it?.record?.street || ''; tr.innerHTML = '<td style="padding:6px;border-bottom:1px solid #334155">' + (i + 1) + '</td><td style="padding:6px;border-bottom:1px solid #334155">' + stand + '</td><td style="padding:6px;border-bottom:1px solid #334155">' + area + '</td><td style="padding:6px;border-bottom:1px solid #334155">' + street + '</td><td style="padding:6px;border-bottom:1px solid #334155">' + ts + '</td>'; tb.appendChild(tr) }) }
+              function switchTab(which) { const cap = document.getElementById('viewCapture'); const out = document.getElementById('viewOutbox'); const b1 = document.getElementById('tabCapture'); const b2 = document.getElementById('tabOutbox'); if (which === 'outbox') { cap?.classList.add('hidden'); out?.classList.remove('hidden'); b1?.classList.remove('active'); b2?.classList.add('active'); renderOutbox() } else { out?.classList.add('hidden'); cap?.classList.remove('hidden'); b2?.classList.remove('active'); b1?.classList.add('active') } }
+              function updateBadge(lat, lon, acc) { const el = document.getElementById('gps'); if (!el) return; el.textContent = 'GPS: ' + lat.toFixed(6) + ', ' + lon.toFixed(6) + ' (±' + Math.round(acc) + ' m)' }
+              function startGeoWatch() { const gpsEl = document.getElementById('gps'); if (!('geolocation' in navigator)) { gpsEl && (gpsEl.textContent = 'GPS: unavailable'); return } gpsEl && (gpsEl.textContent = 'GPS: locating…'); navigator.geolocation.watchPosition(pos => { const { latitude, longitude, accuracy } = pos.coords; updateBadge(latitude, longitude, accuracy); LS.set(userKey('lastGPS'), { latitude, longitude, accuracy, ts: new Date().toISOString() }) }, () => { }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }) }
+              const FIELD_IDS = ['stand', 'area', 'street', 'clientInfo', 'elecSn', 'elecType', 'minisub', 'feeder', 'supplyCable', 'breakerState', 'waterSn', 'waterType', 'standNote'];
+              function gather() { const d = {}; FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el) d[id] = el.value }); d._ts = new Date().toISOString(); return d }
+              function applyDraft(d) { if (!d) return; FIELD_IDS.forEach(id => { if (d[id] !== undefined) { const el = document.getElementById(id); if (el) el.value = d[id] } }) }
+              function saveDraft() { LS.set(userKey('draft'), gather()) }
+              function loadDraft() { const d = LS.get(userKey('draft')); if (d) applyDraft(d) }
+              function resetForm() { const form = document.getElementById('captureForm'); if (form) form.reset(); LS.del(userKey('draft')); populateTypes();['area', 'elecType', 'supplyCable', 'breakerState', 'waterType'].forEach(id => { const el = document.getElementById(id); if (el) el.value = '' }); const s = document.getElementById('status'); if (s) s.textContent = ''; const first = document.getElementById('stand'); first && first.focus() }
+              function val(id) { const el = document.getElementById(id); return (el && el.value ? el.value : '').trim() }
+              async function sendToWebhook(body, url) { try { const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); return { ok: res.ok } } catch (e) { return { ok: false } } }
+              function queuePayload(p) { const out = LS.get(userKey('outbox')) || []; out.push(p); LS.set(userKey('outbox'), out); refreshKpis(); renderOutbox() }
+              let __syncInFlight = false;
+              async function syncOutbox(opts) {
+                  opts = opts || { silent: false };
+                  if (__syncInFlight) return; // prevent overlapping runs
+                  __syncInFlight = true;
 
-  
-<script>
-(function hardwiredAuthPatch(){
-  const AUTH_WEBHOOK = 'https://n8n.srv1079977.hstgr.cloud/webhook/InfoCheckValidatePassword';
-  const DEFAULT_SETTINGS = {
-  authWebhook: 'https://n8n.srv1079977.hstgr.cloud/webhook-test/InfoCheckValidatePassword',
-  webhookUrl: 'https://n8n.srv1079977.hstgr.cloud/webhook-test/AuditUpload',
-  createUserWebhook: 'https://n8n.srv1079977.hstgr.cloud/webhook-test/UserInfo'
-};
+                  const s = LS.get('settings') || {};
+                  const sendUrl = (s.webhook || s.webhookUrl || '').trim();
+                  if (!sendUrl) {
+                      __syncInFlight = false;
+                      if (!opts.silent) alert('Set your webhook in Settings');
+                      return;
+                  }
 
-  async function performLogin(e){
-    try { e && e.preventDefault && e.preventDefault(); } catch(_) {}
-    const uEl = document.getElementById('loginUser');
-    const pEl = document.getElementById('loginPass');
-    const u = (uEl && uEl.value || '').trim();
-    const p = (pEl && pEl.value || '').trim();
-    const btn = document.querySelector('#loginForm button[type="submit"]');
-    if (!u || !p){ alert('Enter username and password'); return; }
+                  let out = LS.get(userKey('outbox')) || [];
+                  if (out.length === 0) {
+                      __syncInFlight = false;
+                      if (!opts.silent) alert('Nothing to sync');
+                      return;
+                  }
 
-    if (btn){ btn.disabled = true; btn.textContent = 'Signing in…'; }
+                  const delayMs = 2000;
+                  let sent = 0;
 
-    try {
-      const res = await fetch(AUTH_WEBHOOK, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: u, password: p })
-      });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      let data = null; try { data = await res.json(); } catch(_) {}
+                  const finalize = (hadFail) => {
+                      __syncInFlight = false;
+                      // Refresh KPIs and button states at the end
+                      refreshKpis();
+                      if (!opts.silent) {
+                          const remaining = (LS.get(userKey('outbox')) || []).length;
+                          let msg = 'Synced ' + sent + ' item(s)';
+                          msg += hadFail ? '; stopped on an error. Remaining: ' + remaining : '; done.';
+                          alert(msg);
+                      }
+                  };
 
-      if (!data || data.ok !== true) throw new Error((data && data.message) || 'Invalid credentials');
+                  const processNext = async () => {
+                      out = LS.get(userKey('outbox')) || [];
+                      if (out.length === 0) { finalize(false); return; }
+                      const item = out[0];
 
-      const cur = (typeof ensureSettings === 'function') ? ensureSettings() : (window.settings || {});
-      const server = (data && data.settings) ? data.settings : {};
-      if (window.LS && typeof LS.set === 'function'){
-        LS.set('settings', { ...DEFAULT_SETTINGS, ...cur, ...server });
-        LS.set('currentUser', { u, ts:new Date().toISOString(), tz: 'Africa/Johannesburg' });
-      } else {
-        localStorage.setItem('settings', JSON.stringify({ ...DEFAULT_SETTINGS, ...cur, ...server }));
-        localStorage.setItem('currentUser', JSON.stringify({ u, ts:new Date().toISOString(), tz: 'Africa/Johannesburg' }));
-      }
+                      const r = await sendToWebhook(item, sendUrl);
+                      if (r && r.ok) {
+                          out.shift();
+                          LS.set(userKey('outbox'), out);
 
-      if (typeof setAuthUI === 'function') setAuthUI();
-      alert('login Success');
+                          const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+                          const log = LS.get(userKey('sentLog')) || {};
+                          log[today] = (log[today] || 0) + 1;
+                          LS.set(userKey('sentLog'), log);
 
-    } catch(err){
-      console.error('Login error:', err);
-      alert('Login failed: ' + String(err && err.message || err));
-    } finally {
-      if (btn){ btn.disabled = false; btn.textContent = 'Sign in'; }
-    }
-  }
+                          sent++;
+                          refreshKpis();
+                          setTimeout(processNext, delayMs);
+                      } else {
+                          finalize(true);
+                      }
+                  };
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const f = document.getElementById('loginForm');
-    if (f) {
-      f.addEventListener('submit', (e) => { e.preventDefault(); performLogin(e); });
-    }
-  });
-})();
-</script>
+                  processNext();
+              }
 
-</body>
+              async function onSubmit(e) {
+                  e.preventDefault();
+                  const s = ensureSettings();
+                  const gps = LS.get(userKey('lastGPS'));
+                  const cur = LS.get('currentUser');
+
+                  const payload = {
+                      meta: {
+                          version: 1,
+                          submitted_at: new Date().toISOString(),
+                          timezone: tz,
+                          team: s.team || null,
+                          ua: navigator.userAgent,
+                          user: cur && cur.u ? cur.u : null,
+                          client_id: ensureClientId()
+                      },
+                      record: {
+                          stand: val('stand'),
+                          area: val('area'),
+                          street: val('street'),
+                          client_info: val('clientInfo'),
+                          electrical: {
+                              sn: val('elecSn'),
+                              type: val('elecType'),
+                              minisub: val('minisub'),
+                              feeder: val('feeder'),
+                              supply_cable: val('supplyCable'),
+                              breaker_state: val('breakerState')
+                          },
+                          water: { sn: val('waterSn'), type: val('waterType') },
+                          stand_note: val('standNote'),
+                          gps: gps || null
+                      },
+                      request_id: makeId()  
+                  };
+
+                  // Required fields
+                  if (!val('stand') || !val('area') || !val('street') || !val('minisub') || !val('supplyCable') || !val('breakerState')) {
+                      alert('Please fill all required fields: Stand Nr, Area, Street Address, Minisub / Bulk, Supply Cable, Breaker State');
+                      return;
+                  }
+
+                  // Use unified key
+                  const sendUrl = (s.webhook || s.webhookUrl || '').trim();
+
+                  if (!sendUrl) {
+                      queuePayload(payload);
+                      resetForm();
+                      alert('No webhook set – queued to Outbox');
+                      return;
+                  }
+
+                  const r = await sendToWebhook(payload, sendUrl);
+                  if (r && r.ok) {
+                      const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+                      const log = LS.get(userKey('sentLog')) || {};
+                      log[today] = (log[today] || 0) + 1;
+                      LS.set(userKey('sentLog'), log);
+                      refreshKpis();
+                      resetForm();
+                      alert('Submitted ✔');
+                  } else {
+                      queuePayload(payload);
+                      resetForm();
+                      alert('Offline or server error – queued to Outbox');
+                  }
+              }
+              function loadSettings() {
+                  const s = ensureSettings();
+                  const sendUrl = (s.webhook || s.webhookUrl || '').trim();
+
+                  const wh = document.getElementById('webhook');
+                  const team = document.getElementById('team');
+                  const auth = document.getElementById('authWebhook');
+                  const cu = document.getElementById('createUserWebhook');
+
+                  if (wh) wh.value = sendUrl;             // unified value
+                  if (team) team.value = s.team || '';
+                  if (auth) auth.value = s.authWebhook || '';
+                  if (cu) cu.value = s.createUserWebhook || '';
+              }
+              function saveSettings() {
+                  const wh = (document.getElementById('webhook')?.value || '').trim();
+                  const team = (document.getElementById('team')?.value || '').trim();
+                  const auth = (document.getElementById('authWebhook')?.value || '').trim();
+                  const cu = (document.getElementById('createUserWebhook')?.value || '').trim();
+
+                  const s = ensureSettings();
+                  s.webhook = wh; // primary
+                  s.webhookUrl = wh; // alias in sync
+                  s.team = team;
+                  s.authWebhook = auth;
+                  s.createUserWebhook = cu;
+
+                  LS.set('settings', s);
+                  const dlg = document.getElementById('settings');
+                  dlg?.close?.();
+                  populateTypes();
+                  alert('Settings saved');
+              }
+              function openSettings() {
+                  const dlg = document.getElementById('settings');
+                  if (dlg && typeof dlg.showModal === 'function') { dlg.showModal(); }
+                  else if (dlg) { dlg.setAttribute('open', ''); }
+                  loadSettings();
+                  renderUsers();
+                  renderTypeLists();
+              }
+              function renderTypeLists() { const s = ensureSettings(); const el = document.getElementById('elecTypesList'); const wl = document.getElementById('waterTypesList'); if (el) { el.innerHTML = ''; s.elecTypes.forEach((t, i) => { const tag = document.createElement('span'); tag.className = 'tag'; tag.innerHTML = t + ' <button type="button" data-del-elec="' + i + '">✕</button>'; el.appendChild(tag) }) } if (wl) { wl.innerHTML = ''; s.waterTypes.forEach((t, i) => { const tag = document.createElement('span'); tag.className = 'tag'; tag.innerHTML = t + ' <button type="button" data-del-water="' + i + '">✕</button>'; wl.appendChild(tag) }) } }
+              function addElecType() { const v = (document.getElementById('elecTypeNew')?.value || '').trim(); if (!v) return; const s = ensureSettings(); if (!s.elecTypes.includes(v)) { if (v !== 'Unknown') { s.elecTypes.splice(s.elecTypes.length - 1, 0, v); s.elecTypes = [...new Set(s.elecTypes.filter(x => x !== 'Unknown'))].sort((a, b) => a.localeCompare(b)); s.elecTypes.push('Unknown') } } LS.set('settings', s); const el = document.getElementById('elecTypeNew'); if (el) el.value = ''; renderTypeLists(); populateTypes() }
+              function delElecType(i) { const s = ensureSettings(); s.elecTypes.splice(i, 1); if (!s.elecTypes.includes('Unknown')) s.elecTypes.push('Unknown'); s.elecTypes = [...new Set(s.elecTypes.filter(x => x !== 'Unknown'))].sort((a, b) => a.localeCompare(b)); s.elecTypes.push('Unknown'); LS.set('settings', s); renderTypeLists(); populateTypes() }
+              function addWaterType() { const v = (document.getElementById('waterTypeNew')?.value || '').trim(); if (!v) return; const s = ensureSettings(); if (!s.waterTypes.includes(v)) s.waterTypes.push(v); LS.set('settings', s); const el = document.getElementById('waterTypeNew'); if (el) el.value = ''; renderTypeLists(); populateTypes() }
+              function delWaterType(i) { const s = ensureSettings(); s.waterTypes.splice(i, 1); LS.set('settings', s); renderTypeLists(); populateTypes() }
+              function renderUsers() { const box = document.getElementById('usersList'); if (!box) return; box.innerHTML = '' }
+              function setAuthUI() { const cur = LS.get('currentUser'); const app = document.getElementById('app'); const login = document.getElementById('login'); const badge = document.getElementById('currentUserBadge'); const settingsBtn = document.getElementById('settingsBtn'); if (cur && cur.u) { badge && (badge.textContent = 'User: ' + cur.u); app?.classList.remove('hidden'); login?.classList.add('hidden'); if (settingsBtn) { if (settingsBtn) settingsBtn.classList.remove('hidden'); } refreshKpis(); populateTypes(); loadDraft(); startGeoWatch(); const g = LS.get(userKey('lastGPS')); if (g) { updateBadge(g.latitude, g.longitude, g.accuracy) } } else { badge && (badge.textContent = 'User: —'); app?.classList.add('hidden'); login?.classList.remove('hidden'); settingsBtn?.classList.add('hidden') } }
+              function getCreateUserWebhook() { const s = LS.get('settings') || {}; return (s.createUserWebhook || '').trim() }
+              function logout() { LS.del('currentUser'); try { const form = document.getElementById('captureForm'); form?.reset();['area', 'elecType', 'supplyCable', 'breakerState', 'waterType'].forEach(id => { const el = document.getElementById(id); if (el) el.value = '' }) } catch (e) { } setAuthUI() }
+
+              document.addEventListener('DOMContentLoaded', () => {
+
+                  document.getElementById('tz').textContent = tz;
+                  document.getElementById('tabCapture').addEventListener('click', () => switchTab('capture'));
+                  document.getElementById('tabOutbox').addEventListener('click', () => switchTab('outbox'));
+                  document.getElementById('logoutBtn').addEventListener('click', logout);
+                  document.getElementById('settingsBtn').addEventListener('click', openSettings);
+                  document.getElementById('captureForm').addEventListener('submit', onSubmit);
+                  document.getElementById('syncBtn').addEventListener('click', () => syncOutbox());
+                  document.getElementById('syncBtn2').addEventListener('click', () => syncOutbox());
+                  document.getElementById('addUserBtn').addEventListener('click', async (e) => { e.preventDefault(); const user = (document.getElementById('newUser')?.value || '').trim(); const pass = (document.getElementById('newPass')?.value || '').trim(); if (!user || !pass) { alert('Enter username and password'); return } const url = getCreateUserWebhook(); if (!url) { alert('Create-User Webhook not set'); return } try { const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: user, password: pass }), mode: 'cors', credentials: 'omit' }); if (!res.ok) { alert('Create user failed'); return } document.getElementById('newUser').value = ''; document.getElementById('newPass').value = ''; alert('User file created') } catch (err) { alert('Create user failed') } });
+                  document.getElementById('elecTypesList').addEventListener('click', e => { const t = e.target; const idx = t?.getAttribute('data-del-elec'); if (idx != null) { delElecType(parseInt(idx, 10)) } });
+                  document.getElementById('waterTypesList').addEventListener('click', e => { const t = e.target; const idx = t?.getAttribute('data-del-water'); if (idx != null) { delWaterType(parseInt(idx, 10)) } });
+                  const saveBtn = document.getElementById('saveSettingsBtn'); if (saveBtn) { saveBtn.addEventListener('click', (e) => { e.preventDefault(); saveSettings() }) }
+                  const closeBtn = document.getElementById('closeSettingsBtn'); if (closeBtn) { closeBtn.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('settings')?.close?.() }) }
+                  if (window.__ensureDefaultWebhooks) window.__ensureDefaultWebhooks();
+
+                  // If you're NOT calling discoverConfig() earlier in the file, call it here:
+                  // discoverConfig(); // fire & forget
+
+                  refreshKpis();                    // ensure Sync buttons reflect Outbox immediately
+                  updateOnlineUi();                 // disable Submit if offline
+                  __wasOffline = !navigator.onLine; // record initial state
+                  // If you want a single initial toast when the page opens offline, uncomment:
+                  // if (__wasOffline) toast('You are offline. Submissions will queue to Outbox.');
+
+                  setAuthUI();                      // finally paint the right view
+              });
+              window.setAuthUI = setAuthUI;
+              window.switchTab = switchTab;
+              window.ensureSettings = ensureSettings;
+              window.LS = LS;
+          })();
+      </script>
+
+      <script>
+          (function enforcePostOnlyAuth() {
+              const AUTH_WEBHOOK = 'https://n8n.srv1079977.hstgr.cloud/webhook-test/InfoCheckValidatePassword';
+              const DEFAULT_SETTINGS = {
+                  authWebhook: 'https://n8n.srv1079977.hstgr.cloud/webhook-test/InfoCheckValidatePassword',
+                  webhookUrl: 'https://n8n.srv1079977.hstgr.cloud/webhook-test/AuditUpload',
+                  createUserWebhook: 'https://n8n.srv1079977.hstgr.cloud/webhook-test/UserInfo'
+              };
+
+              window.authViaGet = async () => ({ ok: false, disabled: true });
+
+              async function postLogin(e) {
+                  e?.preventDefault?.();
+                  e?.stopPropagation?.();
+                  e?.stopImmediatePropagation?.();
+                  const u = (document.getElementById('loginUser')?.value || '').trim();
+                  const p = (document.getElementById('loginPass')?.value || '').trim();
+                  if (!u || !p) { alert('Enter username and password'); return; }
+                  const btn = document.querySelector('#loginForm button[type="submit"]');
+                  if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
+                  try {
+                      // Prefer discovered authWebhook; fall back to baked-in AUTH_WEBHOOK if missing
+                      function getConfiguredAuthWebhook() {
+                          try { return (JSON.parse(localStorage.getItem('settings') || '{}').authWebhook || '').trim(); }
+                          catch { return ''; }
+                      }
+                      const authUrl = getConfiguredAuthWebhook() || AUTH_WEBHOOK;
+
+                      const res = await fetch(authUrl, {
+                          method: 'POST',
+                          mode: 'cors',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ username: u, password: p })
+                      });
+
+                      if (!res.ok) throw new Error('Auth HTTP ' + res.status);
+                      const data = await res.json().catch(() => null);
+                      if (!data || data.ok !== true) throw new Error((data && data.message) || 'Invalid credentials');
+
+                      const cur = (window.ensureSettings ? ensureSettings() : {});
+                      const server = (data && data.settings) ? data.settings : {};
+                      const raw = { ...DEFAULT_SETTINGS, ...cur, ...server };
+                      const webhookValue = raw.webhook || raw.webhookUrl || '';
+                      const merged = { ...raw, webhook: webhookValue, webhookUrl: webhookValue };
+
+                      if (window.LS && typeof LS.set === 'function') {
+                          LS.set('settings', merged);
+                          LS.set('currentUser', { u, ts: new Date().toISOString(), tz: 'Africa/Johannesburg' });
+                      } else {
+                          localStorage.setItem('settings', JSON.stringify(merged));
+                          localStorage.setItem('currentUser', JSON.stringify({ u, ts: new Date().toISOString(), tz: 'Africa/Johannesburg' }));
+                      }
+
+                      if (typeof setAuthUI === 'function') setAuthUI();
+                      if (window.__ensureDefaultWebhooks) window.__ensureDefaultWebhooks();
+                      (window.requestAnimationFrame ? requestAnimationFrame : setTimeout)(() => {
+                          try { if (typeof switchTab === 'function') switchTab('capture'); } catch { }
+                      }, 0);
+                      if (window.__afterLoginPopulateSettings) window.__afterLoginPopulateSettings();
+                      alert('login Success');
+                  } catch (err) {
+                      console.error('Login failed:', err);
+                      alert('Login failed: ' + String(err?.message || err));
+                  } finally {
+                      if (btn) { btn.disabled = false; btn.textContent = 'Sign in'; }
+                  }
+              }
+
+              document.addEventListener('DOMContentLoaded', () => {
+                  const old = document.getElementById('loginForm');
+                  if (old && old.parentNode) {
+                      const clone = old.cloneNode(true);
+                      old.parentNode.replaceChild(clone, old);
+                      clone.addEventListener('submit', postLogin);
+                      window.performLogin = postLogin;
+                  }
+              });
+          })();
+      </script>
+
+      <script>
+          window.__ensureDefaultWebhooks = function () {
+              const defaults = {
+                  authWebhook: 'https://n8n.srv1079977.hstgr.cloud/webhook/InfoCheckValidatePassword',
+                  // Put the URL once; we'll mirror it to both keys
+                  webhook: 'https://n8n.srv1079977.hstgr.cloud/webhook/AuditUpload',
+                  webhookUrl: 'https://n8n.srv1079977.hstgr.cloud/webhook/AuditUpload',
+                  createUserWebhook: 'https://n8n.srv1079977.hstgr.cloud/webhook/UserInfo'
+              };
+
+              function getSettings() {
+                  try { return JSON.parse(localStorage.getItem('settings') || '{}'); }
+                  catch { return {}; }
+              }
+              function setSettings(obj) { localStorage.setItem('settings', JSON.stringify(obj || {})); }
+
+              // Merge and normalize the two keys
+              const cur = getSettings();
+              const raw = { ...defaults, ...cur };
+              const webhookValue = raw.webhook || raw.webhookUrl || '';
+              const merged = { ...raw, webhook: webhookValue, webhookUrl: webhookValue };
+
+              setSettings(merged);
+
+              // Populate the actual inputs your page uses (#webhook, not #webhookUrl)
+              requestAnimationFrame(() => setTimeout(() => {
+                  const s = getSettings();
+                  const elWebhook = document.querySelector('#webhook');
+                  const elAuth = document.querySelector('#authWebhook');
+                  const elCreate = document.querySelector('#createUserWebhook');
+                  if (elWebhook) elWebhook.value = s.webhook || s.webhookUrl || '';
+                  if (elAuth) elAuth.value = s.authWebhook || '';
+                  if (elCreate) elCreate.value = s.createUserWebhook || '';
+              }, 0));
+          };
+      </script>
+
+  </body>
 </html>
