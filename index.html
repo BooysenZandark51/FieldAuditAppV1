@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Audit Capture App</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+
+  <body>
+    <!-- LOGIN -->
+    <div id="login" class="wrap">
+      <div class="card" style="max-width:520px;margin:10vh auto">
+        <h1>Sign in</h1>
+        <form id="loginForm">
+          <label for="loginUser">Username</label>
+          <input id="loginUser" autocomplete="username" />
+          <label for="loginPass">Password</label>
+          <input id="loginPass" type="password" autocomplete="current-password" />
+          <div class="btns">
+            <button class="primary" type="submit">Sign in</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- APP -->
+    <div id="app" class="wrap hidden">
+      <div class="card">
+        <h1>Audit Capture App</h1>
+
+        <div class="top-actions">
+          <span id="currentUserBadge" class="badge">User: —</span>
+          <button class="iconbtn" id="logoutBtn" title="Logout">↩</button>
+          <button id="settingsBtn" class="iconbtn hidden" title="Settings">⚙</button>
+        </div>
+
+        <div class="tabs">
+          <button id="tabCapture" class="tabbtn active" type="button">Capture</button>
+          <button id="tabOutbox" class="tabbtn" type="button">Outbox</button>
+        </div>
+
+        <div class="kpi" id="kpis">
+          <div><strong id="queuedCount">0</strong> in Outbox</div>
+          <div><strong id="sentCount">0</strong> sent today</div>
+          <div><span class="badge" id="tz">Africa/Johannesburg</span></div>
+          <div><span class="badge" id="gps">GPS: —</span></div>
+        </div>
+
+        <!-- Capture view -->
+        <div id="viewCapture">
+          <div class="btns" id="outboxBtns">
+            <button class="warn" id="syncBtn" type="button">Upload Outbox</button>
+          </div>
+
+          <form id="captureForm" class="grid" autocomplete="off">
+            <h2>General</h2>
+            <div class="row">
+              <div>
+                <label for="stand">Stand Nr *</label>
+                <input id="stand" required />
+              </div>
+              <div>
+                <label for="area">Area *</label>
+                <select id="area" required>
+                  <option value="">— Select area —</option>
+                  <option>Springbok</option>
+                  <option>Bergsig IND</option>
+                  <option>Bergsig</option>
+                  <option>Maaitjieskloof</option>
+                  <option>Okiep</option>
+                  <option>Concordia</option>
+                  <option>Nababeep</option>
+                  <option>Carolusberg</option>
+                  <option>Fonteintjie</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label for="street">Street Address *</label>
+                <input id="street" required />
+              </div>
+              <div>
+                <label for="clientInfo">Client info complete?</label>
+                <select id="clientInfo">
+                  <option value="Outstanding">Outstanding</option>
+                  <option value="Correct">Correct</option>
+                  <option value="Dup correct Fixed">Dup correct Fixed</option>
+                </select>
+              </div>
+            </div>
+
+            <h2>Electrical</h2>
+            <div class="row">
+              <div>
+                <label for="elecSn">Electrical Meter SN</label>
+                <input id="elecSn" inputmode="numeric" />
+              </div>
+              <div>
+                <label for="elecType">Meter Type</label>
+                <select id="elecType">
+                  <option value="">—</option>
+                  <option>Actaris</option>
+                  <option>Ampy</option>
+                  <option>CBI</option>
+                  <option>Econ</option>
+                  <option>Enligt</option>
+                  <option>Hexing</option>
+                  <option>Ihemeter 3PH WC</option>
+                  <option>Kamstrup 1PH</option>
+                  <option>Kamstrup 3PH</option>
+                  <option>L+G Cashpower</option>
+                  <option>L+G E460</option>
+                  <option>TSK/3</option>
+                  <option>VC1800</option>
+                  <option>VC3000</option>
+                  <option>VC3100</option>
+                  <option>Unknown</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label for="minisub">Minisub / Bulk *</label>
+                <input id="minisub" required />
+              </div>
+              <div>
+                <label for="feeder">Feeder (Feeds From)</label>
+                <input id="feeder" />
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label for="supplyCable">Supply Cable *</label>
+                <select id="supplyCable" required>
+                  <option value="">—</option>
+                  <option>Yes</option>
+                  <option>No</option>
+                </select>
+              </div>
+              <div>
+                <label for="breakerState">Breaker State *</label>
+                <select id="breakerState" required>
+                  <option value="">—</option>
+                  <option>On</option>
+                  <option>Off</option>
+                </select>
+              </div>
+            </div>
+
+            <h2>Water</h2>
+            <div class="row">
+              <div>
+                <label for="waterSn">Water Meter SN</label>
+                <input id="waterSn" inputmode="numeric" />
+              </div>
+              <div>
+                <label for="waterType">Water Meter Type</label>
+                <select id="waterType"><option value="">—</option></select>
+              </div>
+            </div>
+
+            <h2>Notes</h2>
+            <div>
+              <label for="standNote">Stand note</label>
+              <textarea id="standNote" rows="3" placeholder="Optional"></textarea>
+            </div>
+
+            <div class="btns">
+              <button class="primary" type="submit">Submit</button>
+            </div>
+            <div class="status" id="status"></div>
+          </form>
+        </div>
+
+        <!-- Outbox view -->
+        <div id="viewOutbox" class="hidden">
+          <h2>Outbox</h2>
+          <div class="btns">
+            <button class="warn" id="syncBtn2" type="button">Upload Outbox</button>
+          </div>
+          <div style="width:100%;overflow:auto">
+            <table style="width:100%;border-collapse:collapse;margin-top:10px" id="outboxTable">
+              <thead>
+                <tr>
+                  <th style="text-align:left;border-bottom:1px solid #334155;padding:6px">#</th>
+                  <th style="text-align:left;border-bottom:1px solid #334155;padding:6px">Stand</th>
+                  <th style="text-align:left;border-bottom:1px solid #334155;padding:6px">Area</th>
+                  <th style="text-align:left;border-bottom:1px solid #334155;padding:6px">Street</th>
+                  <th style="text-align:left;border-bottom:1px solid #334155;padding:6px">Timestamp</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="footer">All timestamps saved in Africa/Johannesburg (UTC+2).</div>
+        <div id="debug" class="debug hidden"></div>
+      </div>
+    </div>
+
+    <!-- Settings dialog -->
+    <dialog id="settings">
+      <form method="dialog" class="card" style="max-width:680px;width:90vw;margin:auto">
+        <h2>Settings</h2>
+
+        <label for="webhook">n8n Webhook URL *</label>
+        <input id="webhook" placeholder="https://your-n8n/webhook/field-capture" required />
+
+        <label for="team">Team Name</label>
+        <input id="team" />
+
+        <h3 style="margin-top:16px;color:#e5e7eb">Users</h3>
+        <div id="usersList" class="taglist"></div>
+
+        <div class="row">
+          <div>
+            <label for="newUser">New username</label>
+            <input id="newUser" autocomplete="off" />
+          </div>
+          <div>
+            <label for="newPass">New password</label>
+            <input id="newPass" type="password" autocomplete="new-password" />
+          </div>
+          <div>
+            <label for="newRole">Role</label>
+            <select id="newRole">
+              <option value="user" selected>User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:flex-end">
+            <button id="addUserBtn" class="muted" type="button">Add User</button>
+          </div>
+        </div>
+
+        <label for="authWebhook">Auth Webhook (POST)</label>
+        <input id="authWebhook" placeholder="https://your-n8n/webhook/auth" />
+
+        <label for="createUserWebhook">Create-User Webhook (POST)</label>
+        <input id="createUserWebhook" placeholder="https://your-n8n/webhook/create-user" />
+
+        <h3 style="margin-top:16px;color:#e5e7eb">Electrical meter types</h3>
+        <div class="taglist" id="elecTypesList"></div>
+        <div class="row">
+          <div>
+            <label for="elecTypeNew">Add new type</label>
+            <input id="elecTypeNew" />
+          </div>
+          <div style="display:flex;align-items:flex-end">
+            <button id="addElecBtn" class="muted" type="button">Add</button>
+          </div>
+        </div>
+
+        <h3 style="margin-top:10px;color:#e5e7eb">Water meter types</h3>
+        <div class="taglist" id="waterTypesList"></div>
+        <div class="row">
+          <div>
+            <label for="waterTypeNew">Add new type</label>
+            <input id="waterTypeNew" />
+          </div>
+          <div style="display:flex;align-items:flex-end">
+            <button id="addWaterBtn" class="muted" type="button">Add</button>
+          </div>
+        </div>
+
+        <div class="btns">
+          <button id="saveSettingsBtn" class="primary" value="default">Save</button>
+          <button id="closeSettingsBtn" class="muted" value="cancel">Close</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script defer src="./app.js"></script>
+  </body>
+</html>
